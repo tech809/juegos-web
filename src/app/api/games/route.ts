@@ -1,0 +1,65 @@
+import { NextResponse } from "next/server";
+import { db, ensureSchema } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  await ensureSchema();
+  const games = await db.execute(`
+    SELECT g.id, g.game, g.winner_id, g.image, g.created_at, p.name as winner_name, p.color as winner_color
+    FROM games g
+    JOIN players p ON p.id = g.winner_id
+    ORDER BY g.created_at DESC
+    LIMIT 50
+  `);
+
+  const playersByGame = await db.execute(`
+    SELECT gp.game_id, pl.id, pl.name, pl.color
+    FROM game_players gp
+    JOIN players pl ON pl.id = gp.player_id
+  `);
+
+  const grouped = new Map();
+  for (const row of playersByGame.rows) {
+    const key = row.game_id;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push({ id: row.id, name: row.name, color: row.color });
+  }
+
+  const enriched = games.rows.map((g) => ({
+    ...g,
+    players: grouped.get(g.id) ?? [],
+  }));
+
+  return NextResponse.json(enriched);
+}
+
+export async function POST(request: Request) {
+  await ensureSchema();
+  const { playerIds, winnerId, image } = await request.json();
+
+  if (!Array.isArray(playerIds) || playerIds.length < 2) {
+    return NextResponse.json({ error: "Se necesitan al menos 2 jugadores" }, { status: 400 });
+  }
+  if (!winnerId || !playerIds.includes(winnerId)) {
+    return NextResponse.json({ error: "El ganador debe estar entre los jugadores" }, { status: 400 });
+  }
+  if (typeof image === "string" && image.length > 2_000_000) {
+    return NextResponse.json({ error: "La imagen es demasiado grande" }, { status: 400 });
+  }
+
+  const id = crypto.randomUUID();
+  await db.execute({
+    sql: "INSERT INTO games (id, game, winner_id, image) VALUES (?, 'catan', ?, ?)",
+    args: [id, winnerId, typeof image === "string" ? image : null],
+  });
+
+  for (const playerId of playerIds) {
+    await db.execute({
+      sql: "INSERT INTO game_players (game_id, player_id) VALUES (?, ?)",
+      args: [id, playerId],
+    });
+  }
+
+  return NextResponse.json({ id }, { status: 201 });
+}

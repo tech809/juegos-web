@@ -1,26 +1,172 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #e9d9ae;
+  --foreground: #2b1d0e;
+  --ink: #2b1d0e;
+  --parchment: #f2e4bd;
+  --parchment-deep: #e3cf9c;
+  --card: #f6e9c8;
+  --border: #b8894a;
+  --gold: #c99a2e;
+  --gold-bright: #e8c15c;
+  --wine: #7a1f2b;
+  --wine-bright: #9c2b3a;
+  --forest: #2f5233;
+  --iron: #5b5346;
+  --shadow: rgba(43, 29, 14, 0.35);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-parchment: var(--parchment);
+  --color-parchment-deep: var(--parchment-deep);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-wine: var(--wine);
+  --color-wine-bright: var(--wine-bright);
+  --color-forest: var(--forest);
+  --color-iron: var(--iron);
+  --font-display: var(--font-cinzel);
+  --font-sans: var(--font-garamond);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #14100a;
+    --foreground: #ecdcb4;
+    --ink: #ecdcb4;
+    --parchment: #241c11;
+    --parchment-deep: #1a1409;
+    --card: #241a0f;
+    --border: #6b4f26;
+    --gold: #d4af37;
+    --gold-bright: #f0cf6c;
+    --wine: #a9313f;
+    --wine-bright: #c53f4f;
+    --forest: #4a7d52;
+    --iron: #8a7f68;
+    --shadow: rgba(0, 0, 0, 0.6);
   }
 }
 
+* {
+  border-color: var(--border);
+}
+
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Georgia, serif;
+  background-image:
+    radial-gradient(ellipse at top, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.12) 100%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0.015) 0px,
+      rgba(0, 0, 0, 0.015) 2px,
+      transparent 2px,
+      transparent 4px
+    ),
+    radial-gradient(circle at 15% 20%, rgba(122, 31, 43, 0.06), transparent 35%),
+    radial-gradient(circle at 85% 80%, rgba(47, 82, 51, 0.08), transparent 40%);
+  background-attachment: fixed;
+}
+
+.font-display {
+  font-family: var(--font-display), serif;
+  letter-spacing: 0.02em;
+}
+
+/* --- Marco ornamentado tipo pergamino --- */
+.ornate {
+  position: relative;
+  background: var(--card);
+  border: 2px solid var(--border);
+  box-shadow:
+    0 0 0 4px var(--parchment),
+    0 0 0 5px var(--gold),
+    0 8px 24px -8px var(--shadow);
+}
+
+.ornate::before,
+.ornate::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--gold);
+  pointer-events: none;
+}
+
+.ornate::before {
+  top: -6px;
+  left: -6px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.ornate::after {
+  bottom: -6px;
+  right: -6px;
+  border-left: none;
+  border-top: none;
+}
+
+.corner-tr,
+.corner-bl {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--gold);
+  pointer-events: none;
+}
+.corner-tr {
+  top: -6px;
+  right: -6px;
+  border-left: none;
+  border-bottom: none;
+}
+.corner-bl {
+  bottom: -6px;
+  left: -6px;
+  border-right: none;
+  border-top: none;
+}
+
+.seal-btn {
+  position: relative;
+  font-family: var(--font-display), serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 2px solid var(--gold-bright);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 4px 12px -4px var(--shadow);
+}
+
+.divider-flourish {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--gold);
+  opacity: 0.8;
+}
+.divider-flourish::before,
+.divider-flourish::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold), transparent);
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.animate-shimmer {
+  animation: shimmer 2.4s ease-in-out infinite;
 }

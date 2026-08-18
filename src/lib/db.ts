@@ -1,0 +1,27 @@
+import { createClient } from "@libsql/client";
+import { readFileSync } from "fs";
+import { join } from "path";
+
+const url = process.env.TURSO_DATABASE_URL ?? "file:./local.db";
+const authToken = process.env.TURSO_AUTH_TOKEN;
+
+export const db = createClient({ url, authToken });
+
+let initialized = false;
+
+export async function ensureSchema() {
+  if (initialized) return;
+  const schema = readFileSync(join(process.cwd(), "src/lib/schema.sql"), "utf-8");
+  const statements = schema.split(";").map((s) => s.trim()).filter(Boolean);
+  for (const statement of statements) {
+    await db.execute(statement);
+  }
+
+  try {
+    await db.execute("ALTER TABLE games ADD COLUMN image TEXT");
+  } catch {
+    // ya existe la columna
+  }
+
+  initialized = true;
+}
