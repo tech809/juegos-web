@@ -11,11 +11,16 @@ import { ShieldIcon } from "@/components/icons";
 export default function JugadoresPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     fetch("/api/players")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
       .then(setPlayers)
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -33,6 +38,8 @@ export default function JugadoresPage() {
             <Skeleton key={i} className="h-[72px] w-full" />
           ))}
         </div>
+      ) : error ? (
+        <p className="text-sm text-wine font-semibold">No se pudo cargar la lista. Comprueba tu conexión.</p>
       ) : players.length === 0 ? (
         <p className="text-sm opacity-60 italic">Aún no hay aspirantes registrados.</p>
       ) : (

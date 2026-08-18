@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import type { LeaderboardEntry } from "@/lib/types";
+import type { MusLeaderboardEntry } from "@/lib/types";
 import RadialStat from "@/components/RadialStat";
 import CountUp from "@/components/CountUp";
 import Skeleton from "@/components/Skeleton";
 import { computeBadges, BADGE_TONE_CLASS } from "@/lib/badges";
-import { FlameIcon, ShieldIcon } from "@/components/icons";
+import { CardsIcon, FlameIcon } from "@/components/icons";
 
 type StatsResponse = {
   totalGames: number;
-  leaderboard: LeaderboardEntry[];
+  leaderboard: MusLeaderboardEntry[];
 };
 
 const PODIUM_STYLE = [
@@ -20,19 +19,14 @@ const PODIUM_STYLE = [
   { order: "sm:order-3", height: "min-h-28", medal: "🥉", ring: 60, avatar: 44 },
 ];
 
-export default function EstadisticasPage() {
+export default function MusEstadisticasPage() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/stats")
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
-      })
+    fetch("/api/mus/stats")
+      .then((r) => r.json())
       .then(setStats)
-      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -54,14 +48,10 @@ export default function EstadisticasPage() {
     );
   }
 
-  if (error) {
-    return <p className="text-sm text-wine font-semibold">No se pudo cargar la Sala de la Fama. Comprueba tu conexión.</p>;
-  }
-
   if (!stats || stats.leaderboard.length === 0) {
     return (
       <p className="text-sm opacity-60 italic">
-        Aún no hay suficientes batallas para inscribir un nombre en la Sala de la Fama.
+        Aún no hay suficientes envites para inscribir un nombre en la Sala de la Fama del Mus.
       </p>
     );
   }
@@ -72,9 +62,9 @@ export default function EstadisticasPage() {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="font-display text-2xl sm:text-3xl font-bold mb-1">Sala de la Fama</h2>
+        <h2 className="font-display text-2xl sm:text-3xl font-bold mb-1">Sala de la Fama del Mus</h2>
         <p className="text-sm opacity-70 italic">
-          <CountUp value={stats.totalGames} /> batallas selladas en la crónica.
+          <CountUp value={stats.totalGames} /> partidas selladas en la crónica.
         </p>
       </div>
 
@@ -84,10 +74,9 @@ export default function EstadisticasPage() {
           const style = PODIUM_STYLE[i];
           const badges = computeBadges(p);
           return (
-            <Link
-              href={`/jugadores/${p.id}`}
+            <div
               key={p.id}
-              className={`${style.order} w-full sm:w-36 flex flex-col items-center justify-end ${style.height} ornate rounded-sm bg-card px-3 py-4 hover:brightness-105 transition-all`}
+              className={`${style.order} w-full sm:w-36 flex flex-col items-center justify-end ${style.height} ornate rounded-sm bg-card px-3 py-4`}
             >
               <span className="text-2xl mb-1">{style.medal}</span>
               <RadialStat percent={Math.round(p.win_rate * 100)} color={p.color} size={style.ring} strokeWidth={5}>
@@ -120,7 +109,7 @@ export default function EstadisticasPage() {
                   {badges[0].label}
                 </span>
               )}
-            </Link>
+            </div>
           );
         })}
       </div>
@@ -129,15 +118,14 @@ export default function EstadisticasPage() {
       {rest.length > 0 && (
         <div className="space-y-2">
           <h3 className="divider-flourish text-xs font-display font-semibold uppercase tracking-[0.2em]">
-            El resto de la corte
+            El resto de la mesa
           </h3>
           {rest.map((p, i) => {
             const rank = i + 4;
             return (
-              <Link
-                href={`/jugadores/${p.id}`}
+              <div
                 key={p.id}
-                className="bg-card border-2 border-border rounded-sm p-3 flex items-center gap-3 hover:border-gold transition-colors"
+                className="bg-card border-2 border-border rounded-sm p-3 flex items-center gap-3"
               >
                 <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-display font-bold shrink-0 border-2 border-iron opacity-70">
                   {rank}
@@ -158,7 +146,7 @@ export default function EstadisticasPage() {
                     </p>
                   </div>
                   <p className="text-xs opacity-60">
-                    {p.wins} victorias · {p.games_played} batallas
+                    {p.wins} victorias · {p.games_played} partidas
                     {p.current_streak >= 2 && (
                       <span className="ml-1.5 text-wine font-semibold inline-flex items-center gap-0.5">
                         <FlameIcon className="w-3 h-3" /> {p.current_streak}
@@ -166,14 +154,14 @@ export default function EstadisticasPage() {
                     )}
                   </p>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>
       )}
 
       <p className="text-center text-xs opacity-40 italic flex items-center justify-center gap-1.5">
-        <ShieldIcon className="w-3.5 h-3.5" /> que tu nombre perdure en la leyenda de Catán
+        <CardsIcon className="w-3.5 h-3.5" /> que tu pareja perdure en la leyenda del Mus
       </p>
     </div>
   );

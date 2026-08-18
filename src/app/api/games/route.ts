@@ -9,7 +9,8 @@ export async function GET() {
     SELECT g.id, g.game, g.winner_id, g.image, g.created_at, p.name as winner_name, p.color as winner_color
     FROM games g
     JOIN players p ON p.id = g.winner_id
-    ORDER BY g.created_at DESC
+    WHERE g.game = 'catan'
+    ORDER BY g.created_at DESC, g.rowid DESC
     LIMIT 50
   `);
 
@@ -17,6 +18,7 @@ export async function GET() {
     SELECT gp.game_id, pl.id, pl.name, pl.color
     FROM game_players gp
     JOIN players pl ON pl.id = gp.player_id
+    JOIN games g2 ON g2.id = gp.game_id AND g2.game = 'catan'
   `);
 
   const grouped = new Map();
@@ -36,10 +38,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   await ensureSchema();
-  const { playerIds, winnerId, image } = await request.json();
+  const { playerIds: rawPlayerIds, winnerId, image } = await request.json();
 
-  if (!Array.isArray(playerIds) || playerIds.length < 2) {
+  if (!Array.isArray(rawPlayerIds) || rawPlayerIds.length < 2) {
     return NextResponse.json({ error: "Se necesitan al menos 2 jugadores" }, { status: 400 });
+  }
+  const playerIds = Array.from(new Set(rawPlayerIds));
+  if (playerIds.length < 2) {
+    return NextResponse.json({ error: "Se necesitan al menos 2 jugadores distintos" }, { status: 400 });
   }
   if (!winnerId || !playerIds.includes(winnerId)) {
     return NextResponse.json({ error: "El ganador debe estar entre los jugadores" }, { status: 400 });
@@ -49,16 +55,22 @@ export async function POST(request: Request) {
   }
 
   const id = crypto.randomUUID();
-  await db.execute({
-    sql: "INSERT INTO games (id, game, winner_id, image) VALUES (?, 'catan', ?, ?)",
-    args: [id, winnerId, typeof image === "string" ? image : null],
-  });
-
-  for (const playerId of playerIds) {
-    await db.execute({
-      sql: "INSERT INTO game_players (game_id, player_id) VALUES (?, ?)",
-      args: [id, playerId],
-    });
+  try {
+    await db.batch(
+      [
+        {
+          sql: "INSERT INTO games (id, game, winner_id, image) VALUES (?, 'catan', ?, ?)",
+          args: [id, winnerId, typeof image === "string" ? image : null],
+        },
+        ...playerIds.map((playerId) => ({
+          sql: "INSERT INTO game_players (game_id, player_id) VALUES (?, ?)",
+          args: [id, playerId as string],
+        })),
+      ],
+      "write"
+    );
+  } catch {
+    return NextResponse.json({ error: "No se pudo guardar la partida" }, { status: 500 });
   }
 
   return NextResponse.json({ id }, { status: 201 });

@@ -1,48 +1,49 @@
 import { NextResponse } from "next/server";
 import { db, ensureSchema } from "@/lib/db";
+import type { MusLeaderboardEntry } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   await ensureSchema();
 
-  const totalGames = await db.execute("SELECT COUNT(*) as count FROM games WHERE game = 'catan'");
+  const totalGames = await db.execute("SELECT COUNT(*) as count FROM games WHERE game = 'mus'");
 
   const leaderboard = await db.execute(`
     SELECT
       p.id, p.name, p.color,
-      COUNT(g.id) AS games_played,
-      SUM(CASE WHEN g.winner_id = p.id THEN 1 ELSE 0 END) AS wins
+      COUNT(gp.game_id) AS games_played,
+      SUM(CASE WHEN gp.team = g.winner_team THEN 1 ELSE 0 END) AS wins
     FROM players p
-    LEFT JOIN game_players gp ON gp.player_id = p.id
-    LEFT JOIN games g ON g.id = gp.game_id AND g.game = 'catan'
+    JOIN game_players gp ON gp.player_id = p.id
+    JOIN games g ON g.id = gp.game_id AND g.game = 'mus'
     GROUP BY p.id
     HAVING games_played > 0
   `);
 
-  // partidas de catán ordenadas por fecha para calcular rachas por jugador
+  // partidas de mus ordenadas por fecha para calcular rachas por jugador
   const recentGames = await db.execute(`
-    SELECT g.id, g.winner_id, g.created_at, gp.player_id
+    SELECT g.id, g.winner_team, g.created_at, gp.player_id, gp.team
     FROM games g
     JOIN game_players gp ON gp.game_id = g.id
-    WHERE g.game = 'catan'
-    ORDER BY g.created_at ASC, g.rowid ASC
+    WHERE g.game = 'mus'
+    ORDER BY g.created_at ASC
   `);
 
-  const streaks = new Map();
-  const currentStreak = new Map();
+  const streaks = new Map<string, number>();
+  const currentStreak = new Map<string, number>();
   for (const row of recentGames.rows) {
     const playerId = String(row.player_id);
-    const won = row.winner_id === row.player_id;
+    const won = Number(row.team) === Number(row.winner_team);
     if (won) {
       currentStreak.set(playerId, (currentStreak.get(playerId) ?? 0) + 1);
-      streaks.set(playerId, Math.max(streaks.get(playerId) ?? 0, currentStreak.get(playerId)));
+      streaks.set(playerId, Math.max(streaks.get(playerId) ?? 0, currentStreak.get(playerId)!));
     } else {
       currentStreak.set(playerId, 0);
     }
   }
 
-  const leaderboardWithStreak = leaderboard.rows
+  const leaderboardWithStreak: MusLeaderboardEntry[] = leaderboard.rows
     .map((p) => {
       const gamesPlayed = Number(p.games_played);
       const wins = Number(p.wins);

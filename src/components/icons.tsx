@@ -135,3 +135,24 @@ export function SearchIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+export function CardsIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect
+        x="2.5"
+        y="7"
+        width="12"
+        height="16"
+        rx="1.5"
+        transform="rotate(-12 8.5 15)"
+        fill="currentColor"
+        fillOpacity="0.15"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <rect x="9.5" y="5" width="12" height="16" rx="1.5" fill="currentColor" fillOpacity="0.85" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M15.5 9v6M12.5 12h6" stroke="var(--parchment)" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}

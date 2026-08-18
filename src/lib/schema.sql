@@ -11,13 +11,20 @@ CREATE TABLE IF NOT EXISTS games (
   id TEXT PRIMARY KEY,
   game TEXT NOT NULL DEFAULT 'catan',
   winner_id TEXT NOT NULL REFERENCES players(id),
+  winner_team INTEGER,
   image TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- winner_team (0 o 1) se usa solo en juegos por parejas como 'mus'.
+-- winner_id sigue relleno siempre (para 'mus' apunta a un jugador
+-- representativo de la pareja ganadora), así el resto del esquema
+-- y las consultas existentes no necesitan tratar casos NULL.
+
 CREATE TABLE IF NOT EXISTS game_players (
   game_id TEXT NOT NULL REFERENCES games(id) ON DELETE CASCADE,
   player_id TEXT NOT NULL REFERENCES players(id),
+  team INTEGER,
   PRIMARY KEY (game_id, player_id)
 );
 

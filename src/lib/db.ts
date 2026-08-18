@@ -17,10 +17,17 @@ export async function ensureSchema() {
     await db.execute(statement);
   }
 
-  try {
-    await db.execute("ALTER TABLE games ADD COLUMN image TEXT");
-  } catch {
-    // ya existe la columna
+  const migrations = [
+    "ALTER TABLE games ADD COLUMN image TEXT",
+    "ALTER TABLE games ADD COLUMN winner_team INTEGER",
+    "ALTER TABLE game_players ADD COLUMN team INTEGER",
+  ];
+  for (const migration of migrations) {
+    try {
+      await db.execute(migration);
+    } catch {
+      // ya existe la columna
+    }
   }
 
   initialized = true;

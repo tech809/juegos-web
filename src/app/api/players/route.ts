@@ -11,11 +11,11 @@ export async function GET() {
       p.id,
       p.name,
       p.color,
-      COUNT(gp.game_id) AS games_played,
+      COUNT(g.id) AS games_played,
       SUM(CASE WHEN g.winner_id = p.id THEN 1 ELSE 0 END) AS wins
     FROM players p
     LEFT JOIN game_players gp ON gp.player_id = p.id
-    LEFT JOIN games g ON g.id = gp.game_id
+    LEFT JOIN games g ON g.id = gp.game_id AND g.game = 'catan'
     GROUP BY p.id
     ORDER BY p.name COLLATE NOCASE ASC
   `);
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   }
 
   const existing = await db.execute({
-    sql: "SELECT id, name, color FROM players WHERE name = ?",
+    sql: "SELECT id, name, color FROM players WHERE name = ? COLLATE NOCASE",
     args: [trimmed],
   });
   if (existing.rows.length > 0) {
@@ -43,10 +43,22 @@ export async function POST(request: Request) {
   const id = crypto.randomUUID();
   const color = colorForIndex(count);
 
-  await db.execute({
-    sql: "INSERT INTO players (id, name, color) VALUES (?, ?, ?)",
-    args: [id, trimmed, color],
-  });
+  try {
+    await db.execute({
+      sql: "INSERT INTO players (id, name, color) VALUES (?, ?, ?)",
+      args: [id, trimmed, color],
+    });
+  } catch {
+    // Posible condición de carrera: alguien creó el mismo nombre justo antes.
+    const retry = await db.execute({
+      sql: "SELECT id, name, color FROM players WHERE name = ? COLLATE NOCASE",
+      args: [trimmed],
+    });
+    if (retry.rows.length > 0) {
+      return NextResponse.json(retry.rows[0]);
+    }
+    return NextResponse.json({ error: "No se pudo crear el jugador" }, { status: 500 });
+  }
 
   return NextResponse.json({ id, name: trimmed, color }, { status: 201 });
 }

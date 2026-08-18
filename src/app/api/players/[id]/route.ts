@@ -26,8 +26,8 @@ export async function GET(
       SELECT g.id, g.winner_id, g.image, g.created_at
       FROM games g
       JOIN game_players gp ON gp.game_id = g.id
-      WHERE gp.player_id = ?
-      ORDER BY g.created_at ASC
+      WHERE gp.player_id = ? AND g.game = 'catan'
+      ORDER BY g.created_at ASC, g.rowid ASC
     `,
     args: [id],
   });

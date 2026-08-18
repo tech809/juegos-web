@@ -1,4 +1,4 @@
-export function resizeImage(file: File, maxWidth = 900, quality = 0.72): Promise<string> {
+export function resizeImage(file: File, maxWidth = 640, quality = 0.8): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("No se pudo leer la imagen"));

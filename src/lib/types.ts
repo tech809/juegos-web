@@ -33,6 +33,24 @@ export type Rivalry = {
   theirWins: number;
 };
 
+export type MusTeam = { players: { id: string; name: string; color: string }[] };
+
+export type MusGameRecord = {
+  id: string;
+  winner_team: 0 | 1;
+  image?: string | null;
+  created_at: string;
+  teams: [MusTeam, MusTeam];
+};
+
+export type MusLeaderboardEntry = Player & {
+  games_played: number;
+  wins: number;
+  win_rate: number;
+  current_streak: number;
+  best_streak: number;
+};
+
 export type PlayerProfile = {
   player: { id: string; name: string; color: string };
   stats: {

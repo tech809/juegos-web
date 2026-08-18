@@ -20,18 +20,23 @@ export default function PlayerProfilePage() {
   const [data, setData] = useState<PlayerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     setLoading(true);
+    setNotFound(false);
+    setError(false);
     fetch(`/api/players/${params.id}`)
       .then(async (r) => {
-        if (!r.ok) {
+        if (r.status === 404) {
           setNotFound(true);
           return null;
         }
+        if (!r.ok) throw new Error();
         return r.json();
       })
       .then((d) => d && setData(d))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [params.id]);
 
@@ -43,6 +48,10 @@ export default function PlayerProfilePage() {
         <Skeleton className="h-40 w-full" />
       </div>
     );
+  }
+
+  if (error) {
+    return <p className="text-sm text-wine font-semibold">No se pudo cargar el perfil. Comprueba tu conexión.</p>;
   }
 
   if (notFound || !data) {
@@ -142,22 +151,32 @@ export default function PlayerProfilePage() {
               return (
                 <li
                   key={g.id}
-                  className={`bg-card border-2 rounded-sm px-4 py-2.5 flex items-center justify-between gap-3 ${
+                  className={`bg-card border-2 rounded-sm overflow-hidden flex items-stretch gap-3 ${
                     won ? "border-gold" : "border-border"
                   }`}
                 >
-                  <div className="flex flex-wrap items-center gap-1 text-xs font-display opacity-80">
-                    {g.players.map((p, i) => (
-                      <span key={p.id} className="flex items-center gap-1">
-                        {i > 0 && <span className="opacity-40">vs</span>}
-                        {p.id === g.winner_id && <CrownIcon className="w-3 h-3 text-gold" />}
-                        <span className={p.id === player.id ? "font-bold" : ""}>{p.name}</span>
-                      </span>
-                    ))}
+                  {g.image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={g.image}
+                      alt="Foto de la partida"
+                      className="w-16 shrink-0 object-cover"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0 flex items-center justify-between gap-3 px-4 py-2.5">
+                    <div className="flex flex-wrap items-center gap-1 text-xs font-display opacity-80">
+                      {g.players.map((p, i) => (
+                        <span key={p.id} className="flex items-center gap-1">
+                          {i > 0 && <span className="opacity-40">vs</span>}
+                          {p.id === g.winner_id && <CrownIcon className="w-3 h-3 text-gold" />}
+                          <span className={p.id === player.id ? "font-bold" : ""}>{p.name}</span>
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-[11px] opacity-50 whitespace-nowrap italic shrink-0">
+                      {formatDate(g.created_at)}
+                    </span>
                   </div>
-                  <span className="text-[11px] opacity-50 whitespace-nowrap italic shrink-0">
-                    {formatDate(g.created_at)}
-                  </span>
                 </li>
               );
             })}

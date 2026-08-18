@@ -22,10 +22,16 @@ export default function NewGameForm({ onSaved }: { onSaved?: () => void }) {
 
   async function loadPlayers() {
     setLoading(true);
-    const res = await fetch("/api/players");
-    const data = await res.json();
-    setAllPlayers(data);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/players");
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setAllPlayers(data);
+    } catch {
+      setError("No se pudo cargar la lista de jugadores. Comprueba tu conexión.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -64,21 +70,25 @@ export default function NewGameForm({ onSaved }: { onSaved?: () => void }) {
     const trimmed = name.trim();
     if (!trimmed) return;
     setError(null);
-    const res = await fetch("/api/players", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: trimmed }),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "No se pudo crear el jugador");
-      return;
+    try {
+      const res = await fetch("/api/players", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "No se pudo crear el jugador");
+        return;
+      }
+      const player: Player = await res.json();
+      setAllPlayers((prev) => (prev.some((p) => p.id === player.id) ? prev : [...prev, player]));
+      setSelectedIds((prev) => (prev.includes(player.id) ? prev : [...prev, player.id]));
+      setSearch("");
+      setSuggestionsOpen(false);
+    } catch {
+      setError("No se pudo crear el jugador. Comprueba tu conexión.");
     }
-    const player: Player = await res.json();
-    setAllPlayers((prev) => (prev.some((p) => p.id === player.id) ? prev : [...prev, player]));
-    setSelectedIds((prev) => (prev.includes(player.id) ? prev : [...prev, player.id]));
-    setSearch("");
-    setSuggestionsOpen(false);
   }
 
   function handleSearchEnter() {
@@ -87,9 +97,18 @@ export default function NewGameForm({ onSaved }: { onSaved?: () => void }) {
     const match = allPlayers.find((p) => p.name.toLowerCase() === term.toLowerCase());
     if (match) {
       addExisting(match);
-    } else {
-      createAndAdd(term);
+      return;
     }
+    if (suggestions.length === 1) {
+      // Coincidencia parcial única: la damos por buena para no obligar a tocar la pantalla.
+      addExisting(suggestions[0]);
+      return;
+    }
+    if (suggestions.length > 1) {
+      // Hay varios nombres parecidos: no creamos uno nuevo por error, que elija de la lista.
+      return;
+    }
+    createAndAdd(term);
   }
 
   function openModal() {
@@ -104,24 +123,29 @@ export default function NewGameForm({ onSaved }: { onSaved?: () => void }) {
   async function confirmWinner(winnerId: string, image: string | null) {
     setSaving(true);
     setError(null);
-    const res = await fetch("/api/games", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ playerIds: selectedIds, winnerId, image }),
-    });
-    setSaving(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "No se pudo guardar la partida");
-      return;
+    try {
+      const res = await fetch("/api/games", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerIds: selectedIds, winnerId, image }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "No se pudo guardar la partida");
+        return;
+      }
+      const winner = allPlayers.find((p) => p.id === winnerId);
+      setShowModal(false);
+      setCelebrate(winner?.name ?? "¡Victoria!");
+      setBurst((k) => k + 1);
+      setSelectedIds([]);
+      onSaved?.();
+      setTimeout(() => setCelebrate(null), 3000);
+    } catch {
+      setError("No se pudo guardar la partida. Comprueba tu conexión e inténtalo de nuevo.");
+    } finally {
+      setSaving(false);
     }
-    const winner = allPlayers.find((p) => p.id === winnerId);
-    setShowModal(false);
-    setCelebrate(winner?.name ?? "¡Victoria!");
-    setBurst((k) => k + 1);
-    setSelectedIds([]);
-    onSaved?.();
-    setTimeout(() => setCelebrate(null), 3000);
   }
 
   return (
@@ -149,7 +173,7 @@ export default function NewGameForm({ onSaved }: { onSaved?: () => void }) {
                 <button
                   type="button"
                   onClick={() => removeSelected(p.id)}
-                  className="ml-0.5 opacity-80 hover:opacity-100"
+                  className="-mr-1 p-1.5 opacity-80 hover:opacity-100"
                   aria-label={`Quitar a ${p.name}`}
                 >
                   <XIcon className="w-3.5 h-3.5" />
@@ -224,7 +248,7 @@ export default function NewGameForm({ onSaved }: { onSaved?: () => void }) {
         )}
       </section>
 
-      {error && (
+      {error && !showModal && (
         <p className="text-sm text-wine font-semibold flex items-center gap-1.5">
           <SwordsIcon className="w-4 h-4" /> {error}
         </p>
@@ -242,6 +266,7 @@ export default function NewGameForm({ onSaved }: { onSaved?: () => void }) {
         <WinnerModal
           players={selectedPlayers}
           saving={saving}
+          error={error}
           onClose={() => setShowModal(false)}
           onConfirm={confirmWinner}
         />

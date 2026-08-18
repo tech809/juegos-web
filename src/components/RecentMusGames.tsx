@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import type { GameRecord } from "@/lib/types";
+import type { MusGameRecord } from "@/lib/types";
 import { CrownIcon, ScrollIcon, UndoIcon } from "./icons";
 import Skeleton from "./Skeleton";
 
@@ -16,23 +15,17 @@ function formatDate(iso: string) {
   });
 }
 
-export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
-  const [games, setGames] = useState<GameRecord[]>([]);
+export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) {
+  const [games, setGames] = useState<MusGameRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
-    setError(null);
-    fetch("/api/games")
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
-      })
+    fetch("/api/mus/games")
+      .then((r) => r.json())
       .then((data) => setGames(data))
-      .catch(() => setError("No se pudo cargar la crónica. Comprueba tu conexión."))
       .finally(() => setLoading(false));
   }
 
@@ -41,18 +34,11 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
   async function undoGame(id: string) {
     setConfirmingId(null);
     setRemovingId(id);
-    try {
-      const res = await fetch(`/api/games/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setGames((prev) => prev.filter((g) => g.id !== id));
-      } else {
-        setError("No se pudo deshacer la partida.");
-      }
-    } catch {
-      setError("No se pudo deshacer la partida. Comprueba tu conexión.");
-    } finally {
-      setRemovingId(null);
+    const res = await fetch(`/api/games/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setGames((prev) => prev.filter((g) => g.id !== id));
     }
+    setRemovingId(null);
   }
 
   if (loading) {
@@ -69,8 +55,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
   if (games.length === 0) {
     return (
       <p className="text-sm opacity-60 mt-8 text-center italic flex items-center justify-center gap-2">
-        <ScrollIcon className="w-4 h-4" />
-        {error ?? "La crónica está en blanco. ¡Sé el primero en escribir tu leyenda!"}
+        <ScrollIcon className="w-4 h-4" /> La crónica está en blanco. ¡Sed la primera pareja en escribir vuestra leyenda!
       </p>
     );
   }
@@ -81,11 +66,11 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
         <ScrollIcon className="w-4 h-4 shrink-0" />
         Crónica reciente
       </h3>
-      {error && <p className="text-xs text-wine font-semibold mb-2">{error}</p>}
       <ul className="space-y-3">
         {games.map((g) => {
           const confirming = confirmingId === g.id;
-          const others = g.players.filter((p) => p.id !== g.winner_id);
+          const winners = g.teams[g.winner_team]?.players ?? [];
+          const rivals = g.teams[g.winner_team === 0 ? 1 : 0]?.players ?? [];
           return (
             <li
               key={g.id}
@@ -102,29 +87,29 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
                 />
               )}
               <div className="flex-1 min-w-0 p-3 sm:p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <Link
-                    href={`/jugadores/${g.winner_id}`}
-                    className="flex items-center gap-2 min-w-0 hover:brightness-110"
-                  >
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-[#f6e9c8] font-display font-bold text-sm border-2 shrink-0"
-                      style={{ backgroundColor: g.winner_color, borderColor: g.winner_color }}
-                    >
-                      {g.winner_name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-display font-bold text-base truncate flex items-center gap-1">
-                        <CrownIcon className="w-3.5 h-3.5 text-gold shrink-0" />
-                        {g.winner_name}
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex -space-x-2 shrink-0">
+                    {winners.map((p) => (
+                      <div
+                        key={p.id}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-[#f6e9c8] font-display font-bold text-sm border-2"
+                        style={{ backgroundColor: p.color, borderColor: p.color }}
+                      >
+                        {p.name.charAt(0).toUpperCase()}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-display font-bold text-base truncate flex items-center gap-1">
+                      <CrownIcon className="w-3.5 h-3.5 text-gold shrink-0" />
+                      {winners.map((p) => p.name).join(" y ")}
+                    </p>
+                    {rivals.length > 0 && (
+                      <p className="text-xs opacity-55 truncate">
+                        venció a {rivals.map((p) => p.name).join(" y ")}
                       </p>
-                      {others.length > 0 && (
-                        <p className="text-xs opacity-55 truncate">
-                          venció a {others.map((p) => p.name).join(", ")}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between mt-2.5">

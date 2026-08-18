@@ -3,26 +3,28 @@
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Player } from "@/lib/types";
-import { CameraIcon, CrownIcon, SwordsIcon, XIcon } from "./icons";
+import { CameraIcon, CrownIcon, XIcon } from "./icons";
 import { resizeImage } from "@/lib/image";
 
-export default function WinnerModal({
-  players,
+export default function MusWinnerModal({
+  teamA,
+  teamB,
   saving,
-  error,
   onClose,
   onConfirm,
 }: {
-  players: Player[];
+  teamA: Player[];
+  teamB: Player[];
   saving: boolean;
-  error?: string | null;
   onClose: () => void;
-  onConfirm: (winnerId: string, image: string | null) => void;
+  onConfirm: (winnerTeam: 0 | 1, image: string | null) => void;
 }) {
-  const [winnerId, setWinnerId] = useState<string | null>(null);
+  const [winnerTeam, setWinnerTeam] = useState<0 | 1 | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [processingImage, setProcessingImage] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const teams: [Player[], Player[]] = [teamA, teamB];
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
@@ -57,7 +59,7 @@ export default function WinnerModal({
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-display text-lg font-bold flex items-center gap-2">
               <CrownIcon className="w-5 h-5 text-gold" />
-              ¿Quién ganó?
+              ¿Qué pareja ganó?
             </h3>
             <button
               type="button"
@@ -69,30 +71,37 @@ export default function WinnerModal({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 mb-5">
-            {players.map((p) => {
-              const isWinner = winnerId === p.id;
+          <div className="flex flex-col gap-2.5 mb-5">
+            {teams.map((team, idx) => {
+              const isWinner = winnerTeam === idx;
               return (
                 <button
-                  key={p.id}
+                  key={idx}
                   type="button"
-                  onClick={() => setWinnerId(p.id)}
-                  className={`flex flex-col items-center gap-1.5 p-3 rounded border-2 transition-all ${
+                  onClick={() => setWinnerTeam(idx as 0 | 1)}
+                  className={`flex items-center gap-3 p-3 rounded border-2 transition-all text-left ${
                     isWinner
-                      ? "bg-gold-bright border-gold-bright text-wine scale-105 shadow-lg"
+                      ? "bg-gold-bright border-gold-bright text-wine scale-[1.02] shadow-lg"
                       : "bg-parchment-deep border-border opacity-80 hover:opacity-100"
                   }`}
                 >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-[#f6e9c8] font-display font-bold border-2 relative"
-                    style={{ backgroundColor: p.color, borderColor: p.color }}
-                  >
-                    {p.name.charAt(0).toUpperCase()}
-                    {isWinner && (
-                      <CrownIcon className="w-4 h-4 absolute -top-2.5 left-1/2 -translate-x-1/2 text-gold-bright" />
-                    )}
+                  <div className="flex -space-x-3 shrink-0">
+                    {team.map((p) => (
+                      <div
+                        key={p.id}
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-[#f6e9c8] font-display font-bold border-2"
+                        style={{ backgroundColor: p.color, borderColor: p.color }}
+                      >
+                        {p.name.charAt(0).toUpperCase()}
+                      </div>
+                    ))}
                   </div>
-                  <span className="font-display font-semibold text-sm truncate max-w-full">{p.name}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display font-semibold text-sm truncate flex items-center gap-1.5">
+                      {isWinner && <CrownIcon className="w-4 h-4 text-wine shrink-0" />}
+                      {team.map((p) => p.name).join(" y ")}
+                    </p>
+                  </div>
                 </button>
               );
             })}
@@ -132,16 +141,10 @@ export default function WinnerModal({
             )}
           </div>
 
-          {error && (
-            <p className="text-sm text-wine font-semibold flex items-center gap-1.5 mb-3">
-              <SwordsIcon className="w-4 h-4 shrink-0" /> {error}
-            </p>
-          )}
-
           <button
             type="button"
-            onClick={() => winnerId && onConfirm(winnerId, image)}
-            disabled={!winnerId || saving}
+            onClick={() => winnerTeam !== null && onConfirm(winnerTeam, image)}
+            disabled={winnerTeam === null || saving}
             className="seal-btn w-full py-3 rounded bg-wine text-[#f6e9c8] text-base hover:brightness-110 active:scale-[0.99] transition-all disabled:opacity-50"
           >
             {saving ? "Sellando…" : "Confirmar Victoria"}
