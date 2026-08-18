@@ -45,10 +45,10 @@ Ver `.env.example` para el formato.
 ```
 src/
 ├── app/
-│   ├── page.tsx                Nueva partida + crónica (Catán)
-│   ├── jugadores/               Listado y perfil de jugador (compartido entre juegos)
-│   ├── estadisticas/            Sala de la Fama de Catán
+│   ├── page.tsx                 Landing: elige entre Catán y Mus
+│   ├── catan/                   Nueva partida + crónica + Sala de la Fama de Catán
 │   ├── mus/                     Nueva partida + crónica + Sala de la Fama de Mus
+│   ├── jugadores/                Listado y perfil de jugador (compartido entre juegos)
 │   └── api/                     Rutas API (games, mus, players, stats)
 ├── components/                  Modales, tarjetas, iconos, confeti…
 └── lib/
