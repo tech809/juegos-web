@@ -10,11 +10,11 @@ export const GAMES = {
   catan: {
     label: "Catán",
     icon: "🌾",
-    home: "/",
+    home: "/catan",
     links: [
-      { href: "/", label: "Nueva Partida" },
+      { href: "/catan", label: "Nueva Partida" },
       { href: "/jugadores", label: "Jugadores" },
-      { href: "/estadisticas", label: "Sala de la Fama" },
+      { href: "/catan/estadisticas", label: "Sala de la Fama" },
     ],
   },
   mus: {
@@ -34,13 +34,21 @@ const ORDER: GameKey[] = ["catan", "mus"];
 
 export default function Nav() {
   const pathname = usePathname();
-  const current: GameKey = pathname.startsWith("/mus") ? "mus" : "catan";
-  const game = GAMES[current];
+  const current: GameKey | null = pathname.startsWith("/mus")
+    ? "mus"
+    : pathname.startsWith("/catan") || pathname.startsWith("/jugadores")
+      ? "catan"
+      : null;
+  const game = current ? GAMES[current] : null;
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const switcherRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    document.body.dataset.theme = current;
+    if (current) {
+      document.body.dataset.theme = current;
+    } else {
+      delete document.body.dataset.theme;
+    }
   }, [current]);
 
   useEffect(() => {
@@ -75,23 +83,32 @@ export default function Nav() {
       />
       <div className="relative max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
         <div className="relative shrink-0" ref={switcherRef}>
-          <button
-            type="button"
-            onClick={() => setSwitcherOpen((v) => !v)}
-            aria-expanded={switcherOpen}
-            aria-haspopup="menu"
+          <Link
+            href="/"
             className="font-display text-lg sm:text-2xl font-bold tracking-wide flex items-center gap-1.5 sm:gap-2 pr-1 rounded hover:bg-white/5 transition-colors"
           >
-            {current === "mus" ? (
-              <CardsIcon className="w-7 h-7 sm:w-8 sm:h-8 text-gold-bright" />
-            ) : (
-              <CrestIcon className="w-7 h-7 sm:w-8 sm:h-8 text-gold-bright" />
-            )}
-            <span>{game.label}</span>
-            <ChevronDownIcon
-              className={`w-4 h-4 sm:w-5 sm:h-5 text-gold-bright/80 transition-transform ${switcherOpen ? "rotate-180" : ""}`}
-            />
-          </button>
+            <CrestIcon className="w-7 h-7 sm:w-8 sm:h-8 text-gold-bright" />
+            <span>Crónicas de la Mesa</span>
+          </Link>
+          {game && (
+            <button
+              type="button"
+              onClick={() => setSwitcherOpen((v) => !v)}
+              aria-expanded={switcherOpen}
+              aria-haspopup="menu"
+              className="font-display text-sm sm:text-base font-semibold tracking-wide flex items-center gap-1 sm:gap-1.5 pl-2 pr-1 py-1 rounded hover:bg-white/5 transition-colors border-l border-gold-bright/30 ml-1"
+            >
+              {current === "mus" ? (
+                <CardsIcon className="w-5 h-5 text-gold-bright" />
+              ) : (
+                <CrestIcon className="w-5 h-5 text-gold-bright" />
+              )}
+              <span>{game.label}</span>
+              <ChevronDownIcon
+                className={`w-4 h-4 text-gold-bright/80 transition-transform ${switcherOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+          )}
 
           <AnimatePresence>
             {switcherOpen && (
@@ -132,7 +149,7 @@ export default function Nav() {
         </div>
 
         <nav className="flex gap-1 sm:gap-2 overflow-x-auto">
-          {game.links.map((link) => {
+          {game?.links.map((link) => {
             const active = pathname === link.href;
             return (
               <Link
