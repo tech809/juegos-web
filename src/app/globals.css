@@ -15,6 +15,7 @@
   --forest: #2f5233;
   --iron: #5b5346;
   --shadow: rgba(43, 29, 14, 0.35);
+  --nav-bg: var(--wine);
 }
 
 @theme inline {
@@ -70,6 +71,7 @@ body[data-theme="mus"] {
   --forest: #1f5c3f;
   --iron: #7c8a80;
   --shadow: rgba(0, 0, 0, 0.55);
+  --nav-bg: var(--forest);
 }
 
 * {

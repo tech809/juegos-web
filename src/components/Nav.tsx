@@ -65,7 +65,7 @@ export default function Nav() {
   }, []);
 
   return (
-    <header className="relative bg-wine text-[#f2e4bd] shadow-lg sticky top-0 z-20 border-b-4 border-gold">
+    <header className="relative bg-[var(--nav-bg)] text-[#f2e4bd] shadow-lg sticky top-0 z-20 border-b-4 border-gold">
       <div
         className="absolute inset-0 opacity-25 pointer-events-none"
         style={{
@@ -100,32 +100,33 @@ export default function Nav() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.97 }}
                 transition={{ duration: 0.15 }}
-                role="menu"
-                className="ornate absolute top-full left-0 mt-3 w-60 bg-card text-foreground rounded-sm overflow-hidden z-30 py-1.5"
+                className="absolute top-full left-0 mt-3 w-60 z-30"
               >
-                <p className="px-3 pt-1.5 pb-2 text-[10px] font-display uppercase tracking-[0.2em] opacity-50">
-                  Cambiar de juego
-                </p>
-                {ORDER.map((key) => {
-                  const g = GAMES[key];
-                  const active = key === current;
-                  return (
-                    <Link
-                      key={key}
-                      href={g.home}
-                      role="menuitem"
-                      className={`flex items-center gap-3 px-3 py-2.5 text-sm font-display font-semibold transition-colors ${
-                        active ? "bg-gold/15 text-wine" : "hover:bg-gold/10"
-                      }`}
-                    >
-                      <span className="text-xl leading-none" aria-hidden>
-                        {g.icon}
-                      </span>
-                      <span className="flex-1">{g.label}</span>
-                      {active && <CheckIcon className="w-4 h-4 text-gold shrink-0" />}
-                    </Link>
-                  );
-                })}
+                <div role="menu" className="ornate bg-card text-foreground rounded-sm overflow-hidden py-1.5">
+                  <p className="px-3 pt-1.5 pb-2 text-[10px] font-display uppercase tracking-[0.2em] opacity-50">
+                    Cambiar de juego
+                  </p>
+                  {ORDER.map((key) => {
+                    const g = GAMES[key];
+                    const active = key === current;
+                    return (
+                      <Link
+                        key={key}
+                        href={g.home}
+                        role="menuitem"
+                        className={`flex items-center gap-3 px-3 py-2.5 text-sm font-display font-semibold transition-colors ${
+                          active ? "bg-gold/15 text-wine" : "hover:bg-gold/10"
+                        }`}
+                      >
+                        <span className="text-xl leading-none" aria-hidden>
+                          {g.icon}
+                        </span>
+                        <span className="flex-1">{g.label}</span>
+                        {active && <CheckIcon className="w-4 h-4 text-gold shrink-0" />}
+                      </Link>
+                    );
+                  })}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

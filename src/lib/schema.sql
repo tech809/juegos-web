@@ -34,3 +34,15 @@ CREATE TABLE IF NOT EXISTS game_players (
 
 CREATE INDEX IF NOT EXISTS idx_game_players_player ON game_players(player_id);
 CREATE INDEX IF NOT EXISTS idx_games_created_at ON games(created_at);
+
+-- Temporadas anteriores a la app: solo tenemos el resumen (partidas
+-- jugadas / ganadas) por jugador y año, no el detalle de cada partida.
+CREATE TABLE IF NOT EXISTS legacy_stats (
+  id TEXT PRIMARY KEY,
+  game TEXT NOT NULL DEFAULT 'catan',
+  year INTEGER NOT NULL,
+  player_id TEXT NOT NULL REFERENCES players(id),
+  games_played INTEGER NOT NULL,
+  wins INTEGER NOT NULL,
+  UNIQUE (game, year, player_id)
+);

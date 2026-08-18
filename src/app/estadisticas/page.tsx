@@ -8,11 +8,13 @@ import CountUp from "@/components/CountUp";
 import Skeleton from "@/components/Skeleton";
 import ActivityStats from "@/components/ActivityStats";
 import { computeBadges, BADGE_TONE_CLASS } from "@/lib/badges";
-import { FlameIcon, ShieldIcon } from "@/components/icons";
+import { FlameIcon, ScrollIcon, ShieldIcon } from "@/components/icons";
 
 type StatsResponse = {
-  totalGames: number;
-  gamesThisYear: number;
+  mode: "live" | "legacy" | "historico";
+  year: number | null;
+  totalGames: number | null;
+  gamesThisYear: number | null;
   monthly: { month: string; count: number }[];
   leaderboard: LeaderboardEntry[];
 };
@@ -24,12 +26,24 @@ const PODIUM_STYLE = [
 ];
 
 export default function EstadisticasPage() {
+  const [years, setYears] = useState<number[] | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | "all" | null>(null);
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/stats")
+    fetch("/api/stats/years")
+      .then((r) => r.json())
+      .then((d) => setYears(d.years))
+      .catch(() => setYears([]));
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
+    const url = selectedYear === null ? "/api/stats" : `/api/stats?year=${selectedYear}`;
+    fetch(url)
       .then((r) => {
         if (!r.ok) throw new Error();
         return r.json();
@@ -37,7 +51,40 @@ export default function EstadisticasPage() {
       .then(setStats)
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedYear]);
+
+  const activeYear = selectedYear === "all" ? "all" : selectedYear ?? stats?.year ?? null;
+
+  const yearPills = years && years.length > 0 && (
+    <div className="flex flex-wrap justify-center gap-2 mb-6">
+      {years.map((y) => (
+        <button
+          key={y}
+          type="button"
+          onClick={() => setSelectedYear(y)}
+          className={`px-3 py-1.5 rounded-full text-xs font-display font-semibold tracking-wide border-2 transition-all ${
+            activeYear === y
+              ? "bg-gold-bright border-gold-bright text-wine"
+              : "border-border opacity-70 hover:opacity-100 hover:border-gold"
+          }`}
+        >
+          {y}
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={() => setSelectedYear("all")}
+        className={`px-3 py-1.5 rounded-full text-xs font-display font-semibold tracking-wide border-2 transition-all flex items-center gap-1.5 ${
+          activeYear === "all"
+            ? "bg-gold-bright border-gold-bright text-wine"
+            : "border-border opacity-70 hover:opacity-100 hover:border-gold"
+        }`}
+      >
+        <ScrollIcon className="w-3 h-3" />
+        Histórico
+      </button>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -63,22 +110,36 @@ export default function EstadisticasPage() {
 
   if (!stats || stats.leaderboard.length === 0) {
     return (
-      <p className="text-sm opacity-60 italic">
-        Aún no hay suficientes batallas para inscribir un nombre en la Sala de la Fama.
-      </p>
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="font-display text-2xl sm:text-3xl font-bold mb-4">Sala de la Fama</h2>
+          {yearPills}
+        </div>
+        <p className="text-sm opacity-60 italic text-center">
+          Aún no hay suficientes batallas para inscribir un nombre en la Sala de la Fama.
+        </p>
+      </div>
     );
   }
 
   const podium = stats.leaderboard.slice(0, 3);
   const rest = stats.leaderboard.slice(3);
 
+  const subtitle =
+    stats.mode === "live"
+      ? <>
+          <CountUp value={stats.totalGames ?? 0} /> batallas selladas en la crónica de {stats.year}.
+        </>
+      : stats.mode === "legacy"
+        ? `Temporada ${stats.year} — importada de tu registro anterior a la app.`
+        : "Todas las temporadas combinadas, de siempre hasta hoy.";
+
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="font-display text-2xl sm:text-3xl font-bold mb-1">Sala de la Fama</h2>
-        <p className="text-sm opacity-70 italic">
-          <CountUp value={stats.totalGames} /> batallas selladas en la crónica.
-        </p>
+        <h2 className="font-display text-2xl sm:text-3xl font-bold mb-4">Sala de la Fama</h2>
+        {yearPills}
+        <p className="text-sm opacity-70 italic">{subtitle}</p>
       </div>
 
       {/* Podio */}
@@ -175,7 +236,9 @@ export default function EstadisticasPage() {
         </div>
       )}
 
-      <ActivityStats totalGames={stats.totalGames} gamesThisYear={stats.gamesThisYear} monthly={stats.monthly} />
+      {stats.mode === "live" && stats.totalGames !== null && stats.gamesThisYear !== null && (
+        <ActivityStats totalGames={stats.totalGames} gamesThisYear={stats.gamesThisYear} monthly={stats.monthly} />
+      )}
 
       <p className="text-center text-xs opacity-40 italic flex items-center justify-center gap-1.5">
         <ShieldIcon className="w-3.5 h-3.5" /> que tu nombre perdure en la leyenda de Catán
