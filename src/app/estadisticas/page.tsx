@@ -6,11 +6,14 @@ import type { LeaderboardEntry } from "@/lib/types";
 import RadialStat from "@/components/RadialStat";
 import CountUp from "@/components/CountUp";
 import Skeleton from "@/components/Skeleton";
+import ActivityStats from "@/components/ActivityStats";
 import { computeBadges, BADGE_TONE_CLASS } from "@/lib/badges";
 import { FlameIcon, ShieldIcon } from "@/components/icons";
 
 type StatsResponse = {
   totalGames: number;
+  gamesThisYear: number;
+  monthly: { month: string; count: number }[];
   leaderboard: LeaderboardEntry[];
 };
 
@@ -171,6 +174,8 @@ export default function EstadisticasPage() {
           })}
         </div>
       )}
+
+      <ActivityStats totalGames={stats.totalGames} gamesThisYear={stats.gamesThisYear} monthly={stats.monthly} />
 
       <p className="text-center text-xs opacity-40 italic flex items-center justify-center gap-1.5">
         <ShieldIcon className="w-3.5 h-3.5" /> que tu nombre perdure en la leyenda de Catán

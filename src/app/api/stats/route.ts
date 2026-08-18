@@ -33,6 +33,11 @@ export async function GET() {
 
   const streaks = new Map();
   const currentStreak = new Map();
+  const monthlyCounts = new Map<string, number>();
+  const gameIdsSeen = new Set<string>();
+  const currentYear = String(new Date().getFullYear());
+  let gamesThisYear = 0;
+
   for (const row of recentGames.rows) {
     const playerId = String(row.player_id);
     const won = row.winner_id === row.player_id;
@@ -42,7 +47,22 @@ export async function GET() {
     } else {
       currentStreak.set(playerId, 0);
     }
+
+    // cada partida aparece una vez por jugador; contarla una sola vez por game.id
+    const gameId = String(row.id);
+    if (!gameIdsSeen.has(gameId)) {
+      gameIdsSeen.add(gameId);
+      const createdAt = String(row.created_at);
+      const month = createdAt.slice(0, 7); // "YYYY-MM"
+      monthlyCounts.set(month, (monthlyCounts.get(month) ?? 0) + 1);
+      if (createdAt.slice(0, 4) === currentYear) gamesThisYear += 1;
+    }
   }
+
+  const monthly = Array.from(monthlyCounts.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-6)
+    .map(([month, count]) => ({ month, count }));
 
   const leaderboardWithStreak = leaderboard.rows
     .map((p) => {
@@ -67,6 +87,8 @@ export async function GET() {
 
   return NextResponse.json({
     totalGames: Number(totalGames.rows[0].count),
+    gamesThisYear,
+    monthly,
     leaderboard: leaderboardWithStreak,
   });
 }

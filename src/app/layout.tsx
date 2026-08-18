@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { EB_Garamond, Cinzel } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
+import Footer from "@/components/Footer";
 
 const garamond = EB_Garamond({
   variable: "--font-garamond",
@@ -15,8 +16,8 @@ const cinzel = Cinzel({
 });
 
 export const metadata: Metadata = {
-  title: "Catán · Crónicas",
-  description: "Registra tus partidas de Catán y reina en el salón de la fama",
+  title: "Crónicas de la Mesa",
+  description: "Registra tus partidas de Catán y Mus, y reina en el salón de la fama",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -30,9 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-6 sm:py-10">
           {children}
         </main>
-        <footer className="text-center text-xs opacity-50 py-6 font-display tracking-wide">
-          ⚔ CATÁN · CRÓNICAS DE LA MESA ⚔
-        </footer>
+        <Footer />
       </body>
     </html>
   );
