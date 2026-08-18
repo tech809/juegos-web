@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Catán · Crónicas
 
-## Getting Started
+App para registrar partidas de mesa entre un grupo de amigos — de momento **Catán** (ganador individual) y **Mus** (por parejas) — sin login, pensada para usarse desde el móvil justo después de jugar. Producción: [juegos.proactivefuture.eu](https://juegos.proactivefuture.eu).
 
-First, run the development server:
+## Stack
+
+- **Framework**: [Next.js 16](https://nextjs.org) (App Router) + TypeScript, React 19
+- **Estilos**: Tailwind CSS v4, tema medieval hecho a mano (fuentes Cinzel + EB Garamond, texturas, paleta propia por juego)
+- **Animación**: Framer Motion (modales, confeti, transiciones)
+- **Base de datos**: SQLite vía [`@libsql/client`](https://github.com/tursodatabase/libsql-client-ts)
+  - En local: fichero `local.db` (se crea solo, no se versiona)
+  - En producción: [Turso](https://turso.tech) (SQLite distribuido, plan gratuito)
+- **Hosting**: [Vercel](https://vercel.com) (Hobby) — despliegue automático en cada `git push` a `main`
+- **DNS**: Cloudflare (solo gestiona el subdominio `juegos.proactivefuture.eu` → Vercel; el dominio no se movió de sitio)
+
+Todo el esquema (`src/lib/schema.sql`) se crea y migra solo al arrancar (`ensureSchema()` en `src/lib/db.ts`), tanto en local como en Turso — no hace falta ejecutar migraciones a mano.
+
+## Desarrollo local
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000). Sin variables de entorno no hace falta nada más: usa un SQLite local (`file:./local.db`) que se regenera solo.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build   # build de producción (Turbopack)
+npx tsc --noEmit  # chequeo de tipos
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Variables de entorno (solo producción)
 
-## Learn More
+Configuradas en Vercel → Project → Settings → Environment Variables:
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Qué es |
+|---|---|
+| `TURSO_DATABASE_URL` | URL de la base de datos en Turso (`libsql://...`) |
+| `TURSO_AUTH_TOKEN` | Token de autenticación (`turso db tokens create`) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Ver `.env.example` para el formato.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Estructura
 
-## Deploy on Vercel
+```
+src/
+├── app/
+│   ├── page.tsx                Nueva partida + crónica (Catán)
+│   ├── jugadores/               Listado y perfil de jugador (compartido entre juegos)
+│   ├── estadisticas/            Sala de la Fama de Catán
+│   ├── mus/                     Nueva partida + crónica + Sala de la Fama de Mus
+│   └── api/                     Rutas API (games, mus, players, stats)
+├── components/                  Modales, tarjetas, iconos, confeti…
+└── lib/
+    ├── schema.sql                Esquema de la base de datos
+    ├── db.ts                     Cliente libSQL + migraciones automáticas
+    └── types.ts                  Tipos compartidos
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Los jugadores son compartidos entre Catán y Mus (misma tabla `players`); las estadísticas de cada juego se calculan por separado filtrando por columna `game` y `counts_for_stats` (permite marcar una partida como "amistosa", que queda en el histórico pero no cuenta para el ranking).
