@@ -54,6 +54,24 @@
   }
 }
 
+/* --- Mesa de Mus: tapete verde, oro y rojo de naipe --- */
+body[data-theme="mus"] {
+  --background: #0c2119;
+  --foreground: #eef1e4;
+  --ink: #eef1e4;
+  --parchment: #163429;
+  --parchment-deep: #0f2820;
+  --card: #1a3d30;
+  --border: #3a7057;
+  --gold: #c9a227;
+  --gold-bright: #e8c34a;
+  --wine: #9c1c24;
+  --wine-bright: #c2242e;
+  --forest: #1f5c3f;
+  --iron: #7c8a80;
+  --shadow: rgba(0, 0, 0, 0.55);
+}
+
 * {
   border-color: var(--border);
 }
@@ -63,17 +81,12 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Georgia, serif;
   background-image:
-    radial-gradient(ellipse at top, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.12) 100%),
-    repeating-linear-gradient(
-      45deg,
-      rgba(0, 0, 0, 0.015) 0px,
-      rgba(0, 0, 0, 0.015) 2px,
-      transparent 2px,
-      transparent 4px
-    ),
-    radial-gradient(circle at 15% 20%, rgba(122, 31, 43, 0.06), transparent 35%),
-    radial-gradient(circle at 85% 80%, rgba(47, 82, 51, 0.08), transparent 40%);
+    radial-gradient(ellipse at top, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.14) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E"),
+    radial-gradient(circle at 15% 20%, rgba(122, 31, 43, 0.07), transparent 38%),
+    radial-gradient(circle at 85% 85%, rgba(47, 82, 51, 0.09), transparent 42%);
   background-attachment: fixed;
+  transition: background-color 0.3s ease;
 }
 
 .font-display {

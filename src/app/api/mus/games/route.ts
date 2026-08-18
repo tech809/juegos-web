@@ -8,10 +8,10 @@ export async function GET() {
   await ensureSchema();
 
   const games = await db.execute(`
-    SELECT id, winner_team, image, created_at
+    SELECT id, winner_team, image, counts_for_stats, created_at
     FROM games
     WHERE game = 'mus'
-    ORDER BY created_at DESC
+    ORDER BY created_at DESC, rowid DESC
     LIMIT 50
   `);
 
@@ -48,6 +48,7 @@ export async function GET() {
       id: String(g.id),
       winner_team: Number(g.winner_team) === 1 ? 1 : 0,
       image: g.image ? String(g.image) : null,
+      counts_for_stats: Number(g.counts_for_stats) === 1,
       created_at: String(g.created_at),
       teams: [{ players: teams[0] }, { players: teams[1] }],
     };
@@ -58,7 +59,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   await ensureSchema();
-  const { teamA, teamB, winnerTeam, image } = await request.json();
+  const { teamA, teamB, winnerTeam, image, countsForStats } = await request.json();
 
   if (!Array.isArray(teamA) || teamA.length !== 2 || !Array.isArray(teamB) || teamB.length !== 2) {
     return NextResponse.json(
@@ -85,23 +86,28 @@ export async function POST(request: Request) {
 
   const id = crypto.randomUUID();
   const winnerId = winnerTeam === 0 ? teamA[0] : teamB[0];
+  const counts = countsForStats === false ? 0 : 1;
 
-  await db.execute({
-    sql: "INSERT INTO games (id, game, winner_id, winner_team, image) VALUES (?, 'mus', ?, ?, ?)",
-    args: [id, winnerId, winnerTeam, typeof image === "string" ? image : null],
-  });
-
-  for (const playerId of teamA) {
-    await db.execute({
-      sql: "INSERT INTO game_players (game_id, player_id, team) VALUES (?, ?, 0)",
-      args: [id, playerId],
-    });
-  }
-  for (const playerId of teamB) {
-    await db.execute({
-      sql: "INSERT INTO game_players (game_id, player_id, team) VALUES (?, ?, 1)",
-      args: [id, playerId],
-    });
+  try {
+    await db.batch(
+      [
+        {
+          sql: "INSERT INTO games (id, game, winner_id, winner_team, image, counts_for_stats) VALUES (?, 'mus', ?, ?, ?, ?)",
+          args: [id, winnerId, winnerTeam, typeof image === "string" ? image : null, counts],
+        },
+        ...teamA.map((playerId: string) => ({
+          sql: "INSERT INTO game_players (game_id, player_id, team) VALUES (?, ?, 0)",
+          args: [id, playerId],
+        })),
+        ...teamB.map((playerId: string) => ({
+          sql: "INSERT INTO game_players (game_id, player_id, team) VALUES (?, ?, 1)",
+          args: [id, playerId],
+        })),
+      ],
+      "write"
+    );
+  } catch {
+    return NextResponse.json({ error: "No se pudo guardar la partida" }, { status: 500 });
   }
 
   return NextResponse.json({ id }, { status: 201 });

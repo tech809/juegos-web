@@ -23,7 +23,7 @@ export async function GET(
 
   const gamesRes = await db.execute({
     sql: `
-      SELECT g.id, g.winner_id, g.image, g.created_at
+      SELECT g.id, g.winner_id, g.image, g.counts_for_stats, g.created_at
       FROM games g
       JOIN game_players gp ON gp.game_id = g.id
       WHERE gp.player_id = ? AND g.game = 'catan'
@@ -31,6 +31,10 @@ export async function GET(
     `,
     args: [id],
   });
+
+  // el historial (games) muestra TODAS las partidas, pero las estadísticas
+  // (victorias, rachas, duelos) solo se calculan con las que cuentan.
+  const countingRows = gamesRes.rows.filter((g) => Number(g.counts_for_stats) === 1);
 
   const gameIds = gamesRes.rows.map((g) => String(g.id));
   const byGame = new Map<string, { id: string; name: string; color: string }[]>();
@@ -53,12 +57,12 @@ export async function GET(
     }
   }
 
-  const gamesPlayed = gamesRes.rows.length;
-  const wins = gamesRes.rows.filter((g) => g.winner_id === id).length;
+  const gamesPlayed = countingRows.length;
+  const wins = countingRows.filter((g) => g.winner_id === id).length;
 
   let running = 0;
   let bestStreak = 0;
-  for (const g of gamesRes.rows) {
+  for (const g of countingRows) {
     if (g.winner_id === id) {
       running += 1;
       bestStreak = Math.max(bestStreak, running);
@@ -73,7 +77,7 @@ export async function GET(
     { id: string; name: string; color: string; together: number; myWins: number; theirWins: number }
   >();
 
-  for (const g of gamesRes.rows) {
+  for (const g of countingRows) {
     const participants = byGame.get(String(g.id)) ?? [];
     for (const opponent of participants) {
       if (opponent.id === id) continue;
@@ -101,6 +105,7 @@ export async function GET(
       id: String(g.id),
       winner_id: String(g.winner_id),
       image: g.image ? String(g.image) : null,
+      counts_for_stats: Number(g.counts_for_stats) === 1,
       created_at: String(g.created_at),
       players: byGame.get(String(g.id)) ?? [],
     }));

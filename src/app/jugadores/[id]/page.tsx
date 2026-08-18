@@ -172,6 +172,11 @@ export default function PlayerProfilePage() {
                           <span className={p.id === player.id ? "font-bold" : ""}>{p.name}</span>
                         </span>
                       ))}
+                      {!g.counts_for_stats && (
+                        <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-gold/40 text-gold opacity-80">
+                          No cuenta
+                        </span>
+                      )}
                     </div>
                     <span className="text-[11px] opacity-50 whitespace-nowrap italic shrink-0">
                       {formatDate(g.created_at)}

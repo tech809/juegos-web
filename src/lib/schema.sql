@@ -13,8 +13,12 @@ CREATE TABLE IF NOT EXISTS games (
   winner_id TEXT NOT NULL REFERENCES players(id),
   winner_team INTEGER,
   image TEXT,
+  counts_for_stats INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- counts_for_stats: 1 = partida "oficial" (cuenta para victorias/rachas/ranking),
+-- 0 = partida amistosa que queda en la crónica pero no afecta a las estadísticas.
 
 -- winner_team (0 o 1) se usa solo en juegos por parejas como 'mus'.
 -- winner_id sigue relleno siempre (para 'mus' apunta a un jugador

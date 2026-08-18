@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   await ensureSchema();
   const games = await db.execute(`
-    SELECT g.id, g.game, g.winner_id, g.image, g.created_at, p.name as winner_name, p.color as winner_color
+    SELECT g.id, g.game, g.winner_id, g.image, g.counts_for_stats, g.created_at, p.name as winner_name, p.color as winner_color
     FROM games g
     JOIN players p ON p.id = g.winner_id
     WHERE g.game = 'catan'
@@ -30,6 +30,7 @@ export async function GET() {
 
   const enriched = games.rows.map((g) => ({
     ...g,
+    counts_for_stats: Number(g.counts_for_stats) === 1,
     players: grouped.get(g.id) ?? [],
   }));
 
@@ -38,7 +39,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   await ensureSchema();
-  const { playerIds: rawPlayerIds, winnerId, image } = await request.json();
+  const { playerIds: rawPlayerIds, winnerId, image, countsForStats } = await request.json();
 
   if (!Array.isArray(rawPlayerIds) || rawPlayerIds.length < 2) {
     return NextResponse.json({ error: "Se necesitan al menos 2 jugadores" }, { status: 400 });
@@ -55,12 +56,13 @@ export async function POST(request: Request) {
   }
 
   const id = crypto.randomUUID();
+  const counts = countsForStats === false ? 0 : 1;
   try {
     await db.batch(
       [
         {
-          sql: "INSERT INTO games (id, game, winner_id, image) VALUES (?, 'catan', ?, ?)",
-          args: [id, winnerId, typeof image === "string" ? image : null],
+          sql: "INSERT INTO games (id, game, winner_id, image, counts_for_stats) VALUES (?, 'catan', ?, ?, ?)",
+          args: [id, winnerId, typeof image === "string" ? image : null, counts],
         },
         ...playerIds.map((playerId) => ({
           sql: "INSERT INTO game_players (game_id, player_id) VALUES (?, ?)",

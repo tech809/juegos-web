@@ -12,6 +12,7 @@ export type GameRecord = {
   winner_name: string;
   winner_color: string;
   image?: string | null;
+  counts_for_stats: boolean;
   created_at: string;
   players: { id: string; name: string; color: string }[];
 };
@@ -39,6 +40,7 @@ export type MusGameRecord = {
   id: string;
   winner_team: 0 | 1;
   image?: string | null;
+  counts_for_stats: boolean;
   created_at: string;
   teams: [MusTeam, MusTeam];
 };
@@ -65,6 +67,7 @@ export type PlayerProfile = {
     id: string;
     winner_id: string;
     image?: string | null;
+    counts_for_stats: boolean;
     created_at: string;
     players: { id: string; name: string; color: string }[];
   }[];

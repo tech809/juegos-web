@@ -6,7 +6,9 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   await ensureSchema();
 
-  const totalGames = await db.execute("SELECT COUNT(*) as count FROM games WHERE game = 'catan'");
+  const totalGames = await db.execute(
+    "SELECT COUNT(*) as count FROM games WHERE game = 'catan' AND counts_for_stats = 1"
+  );
 
   const leaderboard = await db.execute(`
     SELECT
@@ -15,17 +17,17 @@ export async function GET() {
       SUM(CASE WHEN g.winner_id = p.id THEN 1 ELSE 0 END) AS wins
     FROM players p
     LEFT JOIN game_players gp ON gp.player_id = p.id
-    LEFT JOIN games g ON g.id = gp.game_id AND g.game = 'catan'
+    LEFT JOIN games g ON g.id = gp.game_id AND g.game = 'catan' AND g.counts_for_stats = 1
     GROUP BY p.id
     HAVING games_played > 0
   `);
 
-  // partidas de catán ordenadas por fecha para calcular rachas por jugador
+  // partidas de catán (que cuentan) ordenadas por fecha para calcular rachas por jugador
   const recentGames = await db.execute(`
     SELECT g.id, g.winner_id, g.created_at, gp.player_id
     FROM games g
     JOIN game_players gp ON gp.game_id = g.id
-    WHERE g.game = 'catan'
+    WHERE g.game = 'catan' AND g.counts_for_stats = 1
     ORDER BY g.created_at ASC, g.rowid ASC
   `);
 

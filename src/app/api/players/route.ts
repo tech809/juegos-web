@@ -15,7 +15,7 @@ export async function GET() {
       SUM(CASE WHEN g.winner_id = p.id THEN 1 ELSE 0 END) AS wins
     FROM players p
     LEFT JOIN game_players gp ON gp.player_id = p.id
-    LEFT JOIN games g ON g.id = gp.game_id AND g.game = 'catan'
+    LEFT JOIN games g ON g.id = gp.game_id AND g.game = 'catan' AND g.counts_for_stats = 1
     GROUP BY p.id
     ORDER BY p.name COLLATE NOCASE ASC
   `);

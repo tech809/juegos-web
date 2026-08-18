@@ -7,7 +7,9 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   await ensureSchema();
 
-  const totalGames = await db.execute("SELECT COUNT(*) as count FROM games WHERE game = 'mus'");
+  const totalGames = await db.execute(
+    "SELECT COUNT(*) as count FROM games WHERE game = 'mus' AND counts_for_stats = 1"
+  );
 
   const leaderboard = await db.execute(`
     SELECT
@@ -16,17 +18,17 @@ export async function GET() {
       SUM(CASE WHEN gp.team = g.winner_team THEN 1 ELSE 0 END) AS wins
     FROM players p
     JOIN game_players gp ON gp.player_id = p.id
-    JOIN games g ON g.id = gp.game_id AND g.game = 'mus'
+    JOIN games g ON g.id = gp.game_id AND g.game = 'mus' AND g.counts_for_stats = 1
     GROUP BY p.id
     HAVING games_played > 0
   `);
 
-  // partidas de mus ordenadas por fecha para calcular rachas por jugador
+  // partidas de mus (que cuentan) ordenadas por fecha para calcular rachas por jugador
   const recentGames = await db.execute(`
     SELECT g.id, g.winner_team, g.created_at, gp.player_id, gp.team
     FROM games g
     JOIN game_players gp ON gp.game_id = g.id
-    WHERE g.game = 'mus'
+    WHERE g.game = 'mus' AND g.counts_for_stats = 1
     ORDER BY g.created_at ASC
   `);
 

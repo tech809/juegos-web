@@ -6,12 +6,16 @@ import type { Player } from "@/lib/types";
 import RadialStat from "@/components/RadialStat";
 import Skeleton from "@/components/Skeleton";
 import { computeBadges, BADGE_TONE_CLASS } from "@/lib/badges";
-import { ShieldIcon } from "@/components/icons";
+import { ShieldIcon, XIcon } from "@/components/icons";
 
 export default function JugadoresPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/players")
@@ -24,13 +28,76 @@ export default function JugadoresPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  async function createPlayer() {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const res = await fetch("/api/players", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setCreateError(data.error ?? "No se pudo crear el jugador");
+        return;
+      }
+      const player: Player = await res.json();
+      setPlayers((prev) =>
+        prev.some((p) => p.id === player.id)
+          ? prev
+          : [...prev, player].sort((a, b) => a.name.localeCompare(b.name, "es"))
+      );
+      setNewName("");
+      setAdding(false);
+    } catch {
+      setCreateError("No se pudo crear el jugador. Comprueba tu conexión.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <div>
-      <h2 className="font-display text-2xl sm:text-3xl font-bold mb-1 flex items-center gap-2">
-        <ShieldIcon className="w-6 h-6 text-wine" />
-        Jugadores
-      </h2>
-      <p className="text-sm opacity-70 italic mb-6">Todos los que han cruzado espadas en la mesa.</p>
+      <div className="flex items-center justify-between gap-3 mb-1">
+        <h2 className="font-display text-2xl sm:text-3xl font-bold flex items-center gap-2">
+          <ShieldIcon className="w-6 h-6 text-wine" />
+          Jugadores
+        </h2>
+        <button
+          type="button"
+          onClick={() => setAdding((v) => !v)}
+          className="seal-btn shrink-0 px-3 py-1.5 rounded text-xs bg-forest text-[#f2e4bd] hover:brightness-110 flex items-center gap-1.5"
+        >
+          {adding ? <XIcon className="w-3.5 h-3.5" /> : <span className="text-base leading-none">+</span>}
+          {adding ? "Cancelar" : "Nuevo jugador"}
+        </button>
+      </div>
+      <p className="text-sm opacity-70 italic mb-4">Todos los que han cruzado espadas en la mesa.</p>
+
+      {adding && (
+        <div className="ornate rounded-sm bg-card p-4 mb-6 flex flex-col sm:flex-row gap-2">
+          <input
+            autoFocus
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && createPlayer()}
+            placeholder="Nombre del nuevo aspirante…"
+            className="flex-1 px-3 py-2 rounded border-2 border-border bg-parchment-deep text-sm focus:outline-none focus:ring-2 focus:ring-gold placeholder:italic placeholder:opacity-60"
+          />
+          <button
+            type="button"
+            onClick={createPlayer}
+            disabled={creating || !newName.trim()}
+            className="px-4 py-2 rounded bg-forest text-[#f2e4bd] text-sm font-display font-semibold uppercase tracking-wide hover:brightness-110 border-2 border-forest disabled:opacity-50"
+          >
+            {creating ? "Alistando…" : "Alistar"}
+          </button>
+          {createError && <p className="text-xs text-wine font-semibold sm:self-center">{createError}</p>}
+        </div>
+      )}
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

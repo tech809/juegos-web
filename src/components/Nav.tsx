@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CrestIcon } from "./icons";
+import { useEffect } from "react";
+import { CardsIcon, CrestIcon } from "./icons";
 
 const GAMES = {
   catan: {
@@ -36,6 +37,10 @@ export default function Nav() {
   const game = GAMES[current];
   const otherGame = GAMES[other];
 
+  useEffect(() => {
+    document.body.dataset.theme = current;
+  }, [current]);
+
   return (
     <header className="relative bg-wine text-[#f2e4bd] shadow-lg sticky top-0 z-10 border-b-4 border-gold">
       <div
@@ -48,7 +53,11 @@ export default function Nav() {
       <div className="relative max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
         <div className="flex items-center gap-2 shrink-0">
           <Link href={game.home} className="font-display text-lg sm:text-2xl font-bold tracking-wide flex items-center gap-2">
-            <CrestIcon className="w-7 h-7 sm:w-8 sm:h-8 text-gold-bright" />
+            {current === "mus" ? (
+              <CardsIcon className="w-7 h-7 sm:w-8 sm:h-8 text-gold-bright" />
+            ) : (
+              <CrestIcon className="w-7 h-7 sm:w-8 sm:h-8 text-gold-bright" />
+            )}
             <span className="hidden xs:inline">{game.label}</span>
           </Link>
           <Link
