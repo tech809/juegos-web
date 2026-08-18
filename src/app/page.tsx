@@ -9,7 +9,7 @@ import { CrownIcon, ShieldIcon, SwordsIcon } from "@/components/icons";
 
 export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
-  const [modalOpen, setModalOpen] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
   const [celebrate, setCelebrate] = useState<string | null>(null);
   const [burst, setBurst] = useState(0);
 
