@@ -17,7 +17,7 @@ export async function GET() {
     LEFT JOIN game_players gp ON gp.player_id = p.id
     LEFT JOIN games g ON g.id = gp.game_id AND g.game = 'catan' AND g.counts_for_stats = 1
     GROUP BY p.id
-    ORDER BY p.name COLLATE NOCASE ASC
+    ORDER BY games_played DESC, p.name COLLATE NOCASE ASC
   `);
   return NextResponse.json(result.rows);
 }
