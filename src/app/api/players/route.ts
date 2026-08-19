@@ -22,7 +22,8 @@ export async function GET(request: Request) {
         p.name,
         p.color,
         COUNT(g.id) AS games_played,
-        SUM(CASE WHEN ${winCondition} THEN 1 ELSE 0 END) AS wins
+        SUM(CASE WHEN ${winCondition} THEN 1 ELSE 0 END) AS wins,
+        MAX(g.created_at) AS last_played
       FROM players p
       LEFT JOIN game_players gp ON gp.player_id = p.id
       LEFT JOIN games g ON g.id = gp.game_id AND g.game = ? AND g.counts_for_stats = 1
@@ -55,9 +56,17 @@ export async function GET(request: Request) {
         color: String(p.color),
         games_played: Number(p.games_played) + (extra?.games_played ?? 0),
         wins: Number(p.wins) + (extra?.wins ?? 0),
+        last_played: p.last_played ? String(p.last_played) : null,
       };
     })
+    // primero quien ha jugado más recientemente; los que solo tienen
+    // histórico (sin partidas en la app) van después, por veteranía.
     .sort((a, b) => {
+      if (a.last_played && b.last_played) {
+        if (a.last_played !== b.last_played) return a.last_played < b.last_played ? 1 : -1;
+      } else if (a.last_played !== b.last_played) {
+        return a.last_played ? -1 : 1;
+      }
       if (b.games_played !== a.games_played) return b.games_played - a.games_played;
       return a.name.localeCompare(b.name, "es");
     });

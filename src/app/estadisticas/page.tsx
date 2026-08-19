@@ -8,6 +8,7 @@ import CountUp from "@/components/CountUp";
 import Skeleton from "@/components/Skeleton";
 import ActivityStats from "@/components/ActivityStats";
 import AdvancedStats from "@/components/AdvancedStats";
+import ProvisionalPlayers from "@/components/ProvisionalPlayers";
 import { computeBadges, BADGE_TONE_CLASS } from "@/lib/badges";
 import { FlameIcon, LaurelIcon, ScrollIcon, ShieldIcon } from "@/components/icons";
 
@@ -18,6 +19,8 @@ type StatsResponse = {
   gamesThisYear: number | null;
   monthly: { month: string; count: number }[];
   leaderboard: LeaderboardEntry[];
+  provisional?: LeaderboardEntry[];
+  minRankedGames?: number;
 };
 
 const PODIUM_STYLE = [
@@ -109,7 +112,8 @@ export default function EstadisticasPage() {
     return <p className="text-sm text-wine font-semibold">No se pudo cargar la Sala de la Fama. Comprueba tu conexión.</p>;
   }
 
-  if (!stats || stats.leaderboard.length === 0) {
+  const hasProvisional = (stats?.provisional?.length ?? 0) > 0;
+  if (!stats || (stats.leaderboard.length === 0 && !hasProvisional)) {
     return (
       <div className="space-y-6">
         <div className="text-center">
@@ -244,6 +248,12 @@ export default function EstadisticasPage() {
       {/* Las estadísticas avanzadas necesitan el detalle de cada partida, que
           solo existe para las registradas en la app: no aplican a las
           temporadas importadas (mode "legacy"). */}
+      <ProvisionalPlayers
+        players={stats.provisional ?? []}
+        minGames={stats.minRankedGames ?? 4}
+        game="catan"
+      />
+
       {stats.mode !== "legacy" && <AdvancedStats game="catan" />}
 
 

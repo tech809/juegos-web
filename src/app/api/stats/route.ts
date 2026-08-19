@@ -207,13 +207,27 @@ async function getHistoricoCompleto() {
   };
 }
 
+
+/**
+ * Con muy pocas partidas el porcentaje engaña (1 de 1 = 100%), así que
+ * quien no llega al mínimo se aparta a una lista provisional en vez de
+ * competir en el ranking con los veteranos.
+ */
+const MIN_RANKED_GAMES = 4;
+
+function splitByExperience<T extends { leaderboard: LeaderboardRow[] }>(data: T) {
+  const ranked = data.leaderboard.filter((p) => p.games_played >= MIN_RANKED_GAMES);
+  const provisional = data.leaderboard.filter((p) => p.games_played < MIN_RANKED_GAMES);
+  return { ...data, leaderboard: ranked, provisional, minRankedGames: MIN_RANKED_GAMES };
+}
+
 export async function GET(request: Request) {
   await ensureSchema();
   const { searchParams } = new URL(request.url);
   const yearParam = searchParams.get("year");
 
   if (yearParam === "all") {
-    return NextResponse.json(await getHistoricoCompleto());
+    return NextResponse.json(splitByExperience(await getHistoricoCompleto()));
   }
 
   const year = yearParam ?? String(new Date().getFullYear());
@@ -224,8 +238,8 @@ export async function GET(request: Request) {
   });
 
   if (Number(realCount.rows[0].count) > 0) {
-    return NextResponse.json(await getRealYearStats(year));
+    return NextResponse.json(splitByExperience(await getRealYearStats(year)));
   }
 
-  return NextResponse.json(await getLegacyYearStats(year));
+  return NextResponse.json(splitByExperience(await getLegacyYearStats(year)));
 }

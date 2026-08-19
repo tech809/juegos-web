@@ -8,6 +8,7 @@ import CountUp from "@/components/CountUp";
 import Skeleton from "@/components/Skeleton";
 import ActivityStats from "@/components/ActivityStats";
 import AdvancedStats from "@/components/AdvancedStats";
+import ProvisionalPlayers from "@/components/ProvisionalPlayers";
 import { computeBadges, BADGE_TONE_CLASS } from "@/lib/badges";
 import { CardsIcon, FlameIcon, LaurelIcon } from "@/components/icons";
 
@@ -16,6 +17,8 @@ type StatsResponse = {
   gamesThisYear: number;
   monthly: { month: string; count: number }[];
   leaderboard: MusLeaderboardEntry[];
+  provisional?: MusLeaderboardEntry[];
+  minRankedGames?: number;
 };
 
 const PODIUM_STYLE = [
@@ -53,7 +56,8 @@ export default function MusEstadisticasPage() {
     );
   }
 
-  if (!stats || stats.leaderboard.length === 0) {
+  const hasProvisional = (stats?.provisional?.length ?? 0) > 0;
+  if (!stats || (stats.leaderboard.length === 0 && !hasProvisional)) {
     return (
       <p className="text-sm opacity-60 italic">
         Aún no hay suficientes envites para inscribir un nombre en la Sala de la Fama del Mus.
@@ -168,6 +172,12 @@ export default function MusEstadisticasPage() {
       )}
 
       <ActivityStats totalGames={stats.totalGames} gamesThisYear={stats.gamesThisYear} monthly={stats.monthly} />
+
+      <ProvisionalPlayers
+        players={stats.provisional ?? []}
+        minGames={stats.minRankedGames ?? 4}
+        game="mus"
+      />
 
       <AdvancedStats game="mus" />
 

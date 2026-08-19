@@ -4,6 +4,13 @@ import type { MusLeaderboardEntry } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+
+/**
+ * Con muy pocas partidas el porcentaje engaña (1 de 1 = 100%), así que
+ * quien no llega al mínimo se aparta a una lista provisional.
+ */
+const MIN_RANKED_GAMES = 4;
+
 export async function GET() {
   await ensureSchema();
 
@@ -86,10 +93,15 @@ export async function GET() {
       return b.games_played - a.games_played;
     });
 
+  const ranked = leaderboardWithStreak.filter((p) => p.games_played >= MIN_RANKED_GAMES);
+  const provisional = leaderboardWithStreak.filter((p) => p.games_played < MIN_RANKED_GAMES);
+
   return NextResponse.json({
     totalGames: Number(totalGames.rows[0].count),
     gamesThisYear,
     monthly,
-    leaderboard: leaderboardWithStreak,
+    leaderboard: ranked,
+    provisional,
+    minRankedGames: MIN_RANKED_GAMES,
   });
 }

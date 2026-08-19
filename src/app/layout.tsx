@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { EB_Garamond, Cinzel } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
 const garamond = EB_Garamond({
   variable: "--font-garamond",
@@ -18,6 +19,23 @@ const cinzel = Cinzel({
 export const metadata: Metadata = {
   title: "Crónicas de la Mesa",
   description: "Registra tus partidas de Catán y Mus, y reina en el salón de la fama",
+  applicationName: "Crónicas de la Mesa",
+  appleWebApp: {
+    capable: true,
+    title: "Crónicas",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#7a1f2b",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -32,6 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <Footer />
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );
