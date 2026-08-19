@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
  * Con muy pocas partidas el porcentaje engaña (1 de 1 = 100%), así que
  * quien no llega al mínimo se aparta a una lista provisional.
  */
-const MIN_RANKED_GAMES = 4;
+const MIN_RANKED_GAMES = 6;
 
 export async function GET() {
   await ensureSchema();

@@ -213,7 +213,7 @@ async function getHistoricoCompleto() {
  * quien no llega al mínimo se aparta a una lista provisional en vez de
  * competir en el ranking con los veteranos.
  */
-const MIN_RANKED_GAMES = 4;
+const MIN_RANKED_GAMES = 6;
 
 function splitByExperience<T extends { leaderboard: LeaderboardRow[] }>(data: T) {
   const ranked = data.leaderboard.filter((p) => p.games_played >= MIN_RANKED_GAMES);

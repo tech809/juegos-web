@@ -250,7 +250,7 @@ export default function EstadisticasPage() {
           temporadas importadas (mode "legacy"). */}
       <ProvisionalPlayers
         players={stats.provisional ?? []}
-        minGames={stats.minRankedGames ?? 4}
+        minGames={stats.minRankedGames ?? 6}
         game="catan"
       />
 

@@ -22,8 +22,7 @@ export async function GET(request: Request) {
         p.name,
         p.color,
         COUNT(g.id) AS games_played,
-        SUM(CASE WHEN ${winCondition} THEN 1 ELSE 0 END) AS wins,
-        MAX(g.created_at) AS last_played
+        SUM(CASE WHEN ${winCondition} THEN 1 ELSE 0 END) AS wins
       FROM players p
       LEFT JOIN game_players gp ON gp.player_id = p.id
       LEFT JOIN games g ON g.id = gp.game_id AND g.game = ? AND g.counts_for_stats = 1
@@ -32,6 +31,20 @@ export async function GET(request: Request) {
     `,
     args: [game, game],
   });
+
+  // Última vez que se sentó a la mesa. Va aparte de la consulta de arriba
+  // porque aquí cuentan TODAS las partidas: una amistosa no suma victorias,
+  // pero sí es una partida jugada y debe subirte en la lista.
+  const lastPlayedRes = await db.execute({
+    sql: `SELECT gp.player_id, MAX(g.created_at) AS last_played
+          FROM game_players gp
+          JOIN games g ON g.id = gp.game_id AND g.game = ?
+          GROUP BY gp.player_id`,
+    args: [game],
+  });
+  const lastPlayedById = new Map(
+    lastPlayedRes.rows.map((r) => [String(r.player_id), String(r.last_played)])
+  );
 
   // El histórico de temporadas anteriores a la app se suma a las cifras
   // del jugador, para que reflejen su trayectoria completa.
@@ -56,7 +69,7 @@ export async function GET(request: Request) {
         color: String(p.color),
         games_played: Number(p.games_played) + (extra?.games_played ?? 0),
         wins: Number(p.wins) + (extra?.wins ?? 0),
-        last_played: p.last_played ? String(p.last_played) : null,
+        last_played: lastPlayedById.get(String(p.id)) ?? null,
       };
     })
     // primero quien ha jugado más recientemente; los que solo tienen
