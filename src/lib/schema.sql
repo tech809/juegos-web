@@ -1,9 +1,16 @@
 -- Esquema base. `game` ya está pensado para soportar más juegos en el futuro.
 
+-- Cada juego tiene su propia lista de jugadores: un mismo nombre puede
+-- existir en 'catan' y en 'mus' como dos jugadores distintos, con
+-- historiales y estadísticas separados.
+-- Ojo: el índice único (name, game) NO se crea aquí, sino en db.ts
+-- después de la migración, porque en bases de datos antiguas la columna
+-- `game` todavía no existe cuando se ejecuta este fichero.
 CREATE TABLE IF NOT EXISTS players (
   id TEXT PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
   color TEXT NOT NULL,
+  game TEXT NOT NULL DEFAULT 'catan',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

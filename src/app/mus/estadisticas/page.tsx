@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { MusLeaderboardEntry } from "@/lib/types";
 import RadialStat from "@/components/RadialStat";
 import CountUp from "@/components/CountUp";
@@ -77,9 +78,10 @@ export default function MusEstadisticasPage() {
           const style = PODIUM_STYLE[i];
           const badges = computeBadges(p);
           return (
-            <div
+            <Link
+              href={`/mus/jugadores/${p.id}`}
               key={p.id}
-              className={`${style.order} w-full sm:w-36 flex flex-col items-center justify-end ${style.height} ornate rounded-sm bg-card px-3 py-4`}
+              className={`${style.order} w-full sm:w-36 flex flex-col items-center justify-end ${style.height} ornate rounded-sm bg-card px-3 py-4 hover:brightness-105 transition-all`}
             >
               <span className="text-2xl mb-1">{style.medal}</span>
               <RadialStat percent={Math.round(p.win_rate * 100)} color={p.color} size={style.ring} strokeWidth={5}>
@@ -112,7 +114,7 @@ export default function MusEstadisticasPage() {
                   {badges[0].label}
                 </span>
               )}
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -126,9 +128,10 @@ export default function MusEstadisticasPage() {
           {rest.map((p, i) => {
             const rank = i + 4;
             return (
-              <div
+              <Link
+                href={`/mus/jugadores/${p.id}`}
                 key={p.id}
-                className="bg-card border-2 border-border rounded-sm p-3 flex items-center gap-3"
+                className="bg-card border-2 border-border rounded-sm p-3 flex items-center gap-3 hover:border-gold transition-colors"
               >
                 <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-display font-bold shrink-0 border-2 border-iron opacity-70">
                   {rank}
@@ -157,7 +160,7 @@ export default function MusEstadisticasPage() {
                     )}
                   </p>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

@@ -23,7 +23,7 @@ export const GAMES = {
     home: "/mus",
     links: [
       { href: "/mus", label: "Nueva Partida" },
-      { href: "/jugadores", label: "Jugadores" },
+      { href: "/mus/jugadores", label: "Jugadores" },
       { href: "/mus/estadisticas", label: "Sala de la Fama" },
     ],
   },
@@ -31,44 +31,15 @@ export const GAMES = {
 
 export type GameKey = keyof typeof GAMES;
 const ORDER: GameKey[] = ["catan", "mus"];
-const ACTIVE_GAME_KEY = "activeGame";
-
-// /jugadores (y /jugadores/[id]) es una ruta compartida entre juegos:
-// su URL no indica de qué juego vienes, así que no se puede deducir
-// el juego activo solo mirando el pathname en esas rutas.
-function gameFromPath(pathname: string): GameKey | null {
-  if (pathname.startsWith("/mus")) return "mus";
-  if (pathname.startsWith("/jugadores")) return null;
-  return "catan";
-}
 
 export default function Nav() {
   const pathname = usePathname();
-  const pathGame = gameFromPath(pathname);
-  const [current, setCurrent] = useState<GameKey>(pathGame ?? "catan");
+  // cada juego tiene sus propias rutas (mus cuelga de /mus), así que el
+  // juego activo se deduce siempre del pathname.
+  const current: GameKey = pathname.startsWith("/mus") ? "mus" : "catan";
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const switcherRef = useRef<HTMLDivElement>(null);
   const game = GAMES[current];
-
-  useEffect(() => {
-    if (pathGame) {
-      setCurrent(pathGame);
-      try {
-        localStorage.setItem(ACTIVE_GAME_KEY, pathGame);
-      } catch {
-        // almacenamiento no disponible (modo privado, etc.) — no pasa nada
-      }
-      return;
-    }
-    // ruta compartida (jugadores): mantener el último juego activo conocido
-    let stored: string | null = null;
-    try {
-      stored = localStorage.getItem(ACTIVE_GAME_KEY);
-    } catch {
-      // ignorar
-    }
-    setCurrent(stored === "mus" ? "mus" : "catan");
-  }, [pathname, pathGame]);
 
   useEffect(() => {
     document.body.dataset.theme = current;

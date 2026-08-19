@@ -27,7 +27,7 @@ export default function NewGameModal({
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch("/api/players")
+    fetch("/api/players?game=catan")
       .then((r) => {
         if (!r.ok) throw new Error();
         return r.json();
@@ -67,7 +67,7 @@ export default function NewGameModal({
       const res = await fetch("/api/players", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed }),
+        body: JSON.stringify({ name: trimmed, game: "catan" }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

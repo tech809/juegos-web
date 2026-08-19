@@ -31,5 +31,41 @@ export async function ensureSchema() {
     }
   }
 
+  await migratePlayersPerGame();
+
+  // ya con la columna `game` garantizada en cualquier caso
+  await db.execute(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_players_name_game ON players(name, game)"
+  );
+
   initialized = true;
+}
+
+// La tabla `players` original tenía UNIQUE(name) global, lo que impedía
+// que el mismo nombre existiera en dos juegos distintos. Como SQLite no
+// permite quitar una restricción UNIQUE con ALTER TABLE, hay que
+// reconstruir la tabla.
+async function migratePlayersPerGame() {
+  const cols = await db.execute("PRAGMA table_info(players)");
+  const hasGame = cols.rows.some((c) => String(c.name) === "game");
+  if (hasGame) return;
+
+  await db.batch(
+    [
+      `CREATE TABLE players_migrated (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        color TEXT NOT NULL,
+        game TEXT NOT NULL DEFAULT 'catan',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`,
+      // los jugadores que ya existían son todos de la etapa de Catán
+      `INSERT INTO players_migrated (id, name, color, game, created_at)
+       SELECT id, name, color, 'catan', created_at FROM players`,
+      "DROP TABLE players",
+      "ALTER TABLE players_migrated RENAME TO players",
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_players_name_game ON players(name, game)",
+    ],
+    "write"
+  );
 }

@@ -55,20 +55,24 @@ export type MusLeaderboardEntry = Player & {
 
 export type PlayerProfile = {
   player: { id: string; name: string; color: string };
+  game: "catan" | "mus";
   stats: {
     games_played: number;
     wins: number;
     win_rate: number;
     current_streak: number;
     best_streak: number;
+    legacy_games?: number;
+    legacy_wins?: number;
   };
   rivalries: Rivalry[];
   games: {
     id: string;
     winner_id: string;
+    winner_team?: number | null;
     image?: string | null;
     counts_for_stats: boolean;
     created_at: string;
-    players: { id: string; name: string; color: string }[];
+    players: { id: string; name: string; color: string; team?: number | null }[];
   }[];
 };
