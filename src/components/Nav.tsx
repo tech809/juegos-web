@@ -14,6 +14,7 @@ export const GAMES = {
     links: [
       { href: "/", label: "Nueva Partida" },
       { href: "/jugadores", label: "Jugadores" },
+      { href: "/galeria", label: "Galería" },
       { href: "/estadisticas", label: "Sala de la Fama" },
     ],
   },
@@ -24,6 +25,7 @@ export const GAMES = {
     links: [
       { href: "/mus", label: "Nueva Partida" },
       { href: "/mus/jugadores", label: "Jugadores" },
+      { href: "/mus/galeria", label: "Galería" },
       { href: "/mus/estadisticas", label: "Sala de la Fama" },
     ],
   },

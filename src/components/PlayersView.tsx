@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Player } from "@/lib/types";
 import type { GameId } from "@/lib/games";
 import { gameBasePath } from "@/lib/games";
 import RadialStat from "@/components/RadialStat";
 import Skeleton from "@/components/Skeleton";
+import PlayerEditModal from "@/components/PlayerEditModal";
 import { computeBadges, BADGE_TONE_CLASS } from "@/lib/badges";
-import { CardsIcon, ShieldIcon, XIcon } from "@/components/icons";
+import { CardsIcon, PencilIcon, ShieldIcon, XIcon } from "@/components/icons";
 
 export default function PlayersView({ game }: { game: GameId }) {
   const base = gameBasePath(game);
@@ -20,8 +21,9 @@ export default function PlayersView({ game }: { game: GameId }) {
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
     setError(false);
     fetch(`/api/players?game=${game}`)
@@ -33,6 +35,12 @@ export default function PlayersView({ game }: { game: GameId }) {
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [game]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const editingPlayer = players.find((p) => p.id === editingId) ?? null;
 
   async function createPlayer() {
     const trimmed = newName.trim();
@@ -131,11 +139,25 @@ export default function PlayersView({ game }: { game: GameId }) {
             const rate = games > 0 ? Math.round((wins / games) * 100) : 0;
             const badges = computeBadges({ games_played: games, wins });
             return (
-              <Link
-                href={`${base}/jugadores/${p.id}`}
-                key={p.id}
-                className="ornate rounded-sm p-4 flex items-center gap-4 hover:brightness-105 transition-all"
-              >
+              <div key={p.id} className="relative">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    // la tarjeta entera es un enlace al perfil: no queremos navegar
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setEditingId(p.id);
+                  }}
+                  title={`Editar a ${p.name}`}
+                  aria-label={`Editar a ${p.name}`}
+                  className="absolute top-1.5 right-1.5 z-10 p-2.5 rounded opacity-50 hover:opacity-100 hover:bg-gold/15 hover:text-wine transition-colors"
+                >
+                  <PencilIcon className="w-4 h-4" />
+                </button>
+                <Link
+                  href={`${base}/jugadores/${p.id}`}
+                  className="ornate rounded-sm p-4 pr-12 h-full flex items-center gap-4 hover:brightness-105 transition-all"
+                >
                 <RadialStat percent={rate} color={p.color} size={56}>
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-[#f6e9c8] font-display font-bold text-sm border-2"
@@ -165,10 +187,20 @@ export default function PlayersView({ game }: { game: GameId }) {
                     </div>
                   )}
                 </div>
-              </Link>
+                </Link>
+              </div>
             );
           })}
         </div>
+      )}
+
+      {editingPlayer && (
+        <PlayerEditModal
+          player={editingPlayer}
+          players={players}
+          onClose={() => setEditingId(null)}
+          onChanged={load}
+        />
       )}
     </div>
   );

@@ -159,3 +159,123 @@ export async function GET(
     games,
   });
 }
+
+/**
+ * Renombrar un jugador y/o cambiar su color.
+ * El nombre solo puede chocar con otro jugador DEL MISMO JUEGO
+ * (el índice único es (name, game)).
+ */
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  await ensureSchema();
+  const { id } = await params;
+
+  let body: { name?: unknown; color?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Petición inválida" }, { status: 400 });
+  }
+
+  const current = await db.execute({
+    sql: "SELECT id, name, color, game FROM players WHERE id = ?",
+    args: [id],
+  });
+  if (current.rows.length === 0) {
+    return NextResponse.json({ error: "Jugador no encontrado" }, { status: 404 });
+  }
+  const row = current.rows[0];
+  const game = normalizeGame(row.game);
+
+  let name = String(row.name);
+  if (body.name !== undefined) {
+    if (typeof body.name !== "string" || !body.name.trim()) {
+      return NextResponse.json({ error: "El nombre es obligatorio" }, { status: 400 });
+    }
+    name = body.name.trim();
+    const clash = await db.execute({
+      sql: "SELECT id FROM players WHERE name = ? COLLATE NOCASE AND game = ? AND id <> ?",
+      args: [name, game, id],
+    });
+    if (clash.rows.length > 0) {
+      return NextResponse.json(
+        { error: `Ya hay otro jugador llamado «${name}» en este juego` },
+        { status: 409 }
+      );
+    }
+  }
+
+  let color = String(row.color);
+  if (body.color !== undefined) {
+    if (typeof body.color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(body.color)) {
+      return NextResponse.json({ error: "Color inválido" }, { status: 400 });
+    }
+    color = body.color;
+  }
+
+  try {
+    await db.execute({
+      sql: "UPDATE players SET name = ?, color = ? WHERE id = ?",
+      args: [name, color, id],
+    });
+  } catch {
+    return NextResponse.json({ error: "No se pudo guardar el jugador" }, { status: 500 });
+  }
+
+  return NextResponse.json({ id, name, color, game });
+}
+
+/**
+ * Borrar un jugador. Solo se permite si no deja rastro: sin partidas,
+ * sin victorias y sin histórico. En cualquier otro caso hay que fusionarlo
+ * (así no quedan referencias huérfanas, que en Turso sí se validan).
+ */
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  await ensureSchema();
+  const { id } = await params;
+
+  const current = await db.execute({
+    sql: "SELECT id, name FROM players WHERE id = ?",
+    args: [id],
+  });
+  if (current.rows.length === 0) {
+    return NextResponse.json({ error: "Jugador no encontrado" }, { status: 404 });
+  }
+  const name = String(current.rows[0].name);
+
+  const [playedRes, wonRes, legacyRes] = await Promise.all([
+    db.execute({
+      sql: "SELECT COUNT(*) AS c FROM game_players WHERE player_id = ?",
+      args: [id],
+    }),
+    db.execute({ sql: "SELECT COUNT(*) AS c FROM games WHERE winner_id = ?", args: [id] }),
+    db.execute({ sql: "SELECT COUNT(*) AS c FROM legacy_stats WHERE player_id = ?", args: [id] }),
+  ]);
+
+  const played = Number(playedRes.rows[0].c);
+  const won = Number(wonRes.rows[0].c);
+  const legacy = Number(legacyRes.rows[0].c);
+
+  if (played > 0 || won > 0 || legacy > 0) {
+    const partes: string[] = [];
+    if (played > 0) partes.push(`${played} ${played === 1 ? "partida" : "partidas"}`);
+    if (legacy > 0) partes.push(`histórico de temporadas anteriores`);
+    const detalle = partes.length > 0 ? partes.join(" y ") : "partidas ganadas";
+    return NextResponse.json(
+      {
+        error: `${name} ya tiene ${detalle}. No se puede borrar sin romper la crónica: fusiónalo con otro jugador.`,
+        games: played,
+        legacy,
+      },
+      { status: 409 }
+    );
+  }
+
+  await db.execute({ sql: "DELETE FROM players WHERE id = ?", args: [id] });
+  return NextResponse.json({ ok: true });
+}

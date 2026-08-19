@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { GameRecord } from "@/lib/types";
-import { CrownIcon, ScrollIcon, UndoIcon } from "./icons";
+import { CrownIcon, PencilIcon, ScrollIcon, UndoIcon } from "./icons";
 import Skeleton from "./Skeleton";
+import EditGameModal from "./EditGameModal";
+import ShareGameButton from "./ShareGameButton";
 
 const PAGE_SIZE = 6;
 
@@ -25,6 +27,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
@@ -82,6 +85,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
   }
 
   const visible = games.slice(0, visibleCount);
+  const editingGame = games.find((g) => g.id === editingId) ?? null;
 
   return (
     <div className="mt-10">
@@ -125,6 +129,18 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
             </button>
           );
 
+          const editControl = (
+            <button
+              type="button"
+              onClick={() => setEditingId(g.id)}
+              title="Editar partida"
+              aria-label="Editar partida"
+              className="p-1.5 rounded text-foreground/50 hover:text-wine hover:bg-wine/10 transition-colors"
+            >
+              <PencilIcon className="w-4 h-4" />
+            </button>
+          );
+
           if (g.image) {
             return (
               <li
@@ -141,19 +157,41 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
                     No cuenta
                   </span>
                 )}
-                <div className="absolute top-2 right-2">
+                <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                  {!confirming && (
+                    <ShareGameButton
+                      game="catan"
+                      variant="overlay"
+                      winners={[{ name: g.winner_name, color: g.winner_color }]}
+                      rivals={others}
+                      createdAt={g.created_at}
+                      image={g.image}
+                      countsForStats={g.counts_for_stats}
+                    />
+                  )}
                   {confirming ? (
                     <div className="bg-black/60 backdrop-blur-sm rounded px-2 py-1">{deleteControl}</div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmingId(g.id)}
-                      title="Deshacer partida"
-                      aria-label="Deshacer partida"
-                      className="p-1.5 rounded bg-black/50 text-white/80 hover:text-wine hover:bg-black/70 transition-colors"
-                    >
-                      <UndoIcon className="w-4 h-4" />
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(g.id)}
+                        title="Editar partida"
+                        aria-label="Editar partida"
+                        className="p-1.5 rounded bg-black/50 text-white/80 hover:text-gold-bright hover:bg-black/70 transition-colors"
+                      >
+                        <PencilIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingId(g.id)}
+                        title="Deshacer partida"
+                        aria-label="Deshacer partida"
+                        className="p-1.5 rounded bg-black/50 text-white/80 hover:text-wine hover:bg-black/70 transition-colors"
+                      >
+                        <UndoIcon className="w-4 h-4" />
+                      </button>
+                    </>
                   )}
                 </div>
                 <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
@@ -211,8 +249,25 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
                   )}
                 </div>
               </Link>
-              <div className="flex items-center gap-2 shrink-0">
-                {!confirming && <span className="text-xs opacity-50 whitespace-nowrap italic hidden sm:inline">{formatDate(g.created_at)}</span>}
+              <div className="flex items-center gap-1 shrink-0">
+                {!confirming && (
+                  <ShareGameButton
+                    game="catan"
+                    variant="icon"
+                    winners={[{ name: g.winner_name, color: g.winner_color }]}
+                    rivals={others}
+                    createdAt={g.created_at}
+                    countsForStats={g.counts_for_stats}
+                  />
+                )}
+                {!confirming && (
+                  <>
+                    <span className="text-xs opacity-50 whitespace-nowrap italic hidden sm:inline mr-1">
+                      {formatDate(g.created_at)}
+                    </span>
+                    {editControl}
+                  </>
+                )}
                 {deleteControl}
               </div>
             </li>
@@ -228,6 +283,17 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
         >
           Ver más
         </button>
+      )}
+
+      {editingGame && (
+        <EditGameModal
+          game={editingGame}
+          onClose={() => setEditingId(null)}
+          onSaved={() => {
+            setEditingId(null);
+            load();
+          }}
+        />
       )}
     </div>
   );

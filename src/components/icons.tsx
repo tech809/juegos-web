@@ -173,11 +173,73 @@ export function CheckIcon({ className }: { className?: string }) {
   );
 }
 
+export function ShareIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="18" cy="5" r="2.6" />
+      <circle cx="6" cy="12" r="2.6" />
+      <circle cx="18" cy="19" r="2.6" />
+      <path d="M8.4 10.7l7.2-4.2M8.4 13.3l7.2 4.2" />
+    </svg>
+  );
+}
+
+export function GalleryIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="5" width="18" height="14" rx="1.5" />
+      <circle cx="8.5" cy="9.5" r="1.4" />
+      <path d="M3.5 16l4.5-4 3.3 2.9 3.9-4.6L20.5 15" />
+    </svg>
+  );
+}
+
+export function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15.5 4.5l4 4L8 20H4v-4L15.5 4.5z" />
+      <path d="M13.5 6.5l4 4" />
+    </svg>
+  );
+}
+
+export function MergeIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 3v5c0 2.2 1.8 4 4 4h8" />
+      <path d="M18 3v5c0 2.2-1.8 4-4 4" />
+      <path d="M15 9l3 3-3 3" />
+      <path d="M12 12v9" />
+    </svg>
+  );
+}
+
 export function ChartIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 20V10M11 20V4M18 20v-7" />
       <path d="M2.5 20h19" />
+    </svg>
+  );
+}
+
+export function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3.5" y="5" width="17" height="15" rx="1.5" />
+      <path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" />
+      <path d="M7.5 13h3v3h-3z" fill="currentColor" stroke="none" opacity="0.8" />
+    </svg>
+  );
+}
+
+export function AllianceIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8.5" cy="8" r="3.2" />
+      <circle cx="15.5" cy="8" r="3.2" />
+      <path d="M3 20c0-2.9 2.5-5 5.5-5s5.5 2.1 5.5 5" />
+      <path d="M13 20c0-2.9 2.5-5 5.5-5 1 0 1.9.2 2.5.6" />
     </svg>
   );
 }

@@ -7,8 +7,9 @@ import RadialStat from "@/components/RadialStat";
 import CountUp from "@/components/CountUp";
 import Skeleton from "@/components/Skeleton";
 import ActivityStats from "@/components/ActivityStats";
+import AdvancedStats from "@/components/AdvancedStats";
 import { computeBadges, BADGE_TONE_CLASS } from "@/lib/badges";
-import { CardsIcon, FlameIcon } from "@/components/icons";
+import { CardsIcon, FlameIcon, LaurelIcon } from "@/components/icons";
 
 type StatsResponse = {
   totalGames: number;
@@ -168,6 +169,17 @@ export default function MusEstadisticasPage() {
 
       <ActivityStats totalGames={stats.totalGames} gamesThisYear={stats.gamesThisYear} monthly={stats.monthly} />
 
+      <AdvancedStats game="mus" />
+
+
+      <Link
+        href="/mus/wrapped"
+        className="seal-btn w-full py-3 rounded bg-wine text-[#f6e9c8] text-base hover:brightness-110 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+      >
+        <LaurelIcon className="w-4 h-6" />
+        Resumen del año
+        <LaurelIcon className="w-4 h-6" flip />
+      </Link>
       <p className="text-center text-xs opacity-40 italic flex items-center justify-center gap-1.5">
         <CardsIcon className="w-3.5 h-3.5" /> que tu pareja perdure en la leyenda del Mus
       </p>
