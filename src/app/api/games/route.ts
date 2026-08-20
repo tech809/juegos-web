@@ -48,6 +48,9 @@ export async function POST(request: Request) {
   if (playerIds.length < 2) {
     return NextResponse.json({ error: "Se necesitan al menos 2 jugadores distintos" }, { status: 400 });
   }
+  if (playerIds.length > 6) {
+    return NextResponse.json({ error: "Máximo 6 jugadores por partida" }, { status: 400 });
+  }
   if (!winnerId || !playerIds.includes(winnerId)) {
     return NextResponse.json({ error: "El ganador debe estar entre los jugadores" }, { status: 400 });
   }

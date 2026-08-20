@@ -226,14 +226,11 @@ export default function MusGameModal({
                 )}
               </div>
             )}
-            <p className="text-[11px] opacity-50 italic mt-1.5">
-              Los 2 primeros forman la Pareja 1, los 2 siguientes la Pareja 2.
-            </p>
           </section>
 
-          {/* Parejas y ganadora */}
+          {/* Parejas: se ven en dos columnas desde el primer jugador elegido */}
           <AnimatePresence>
-            {full && (
+            {selectedIds.length > 0 && (
               <motion.section
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
@@ -241,38 +238,49 @@ export default function MusGameModal({
                 className="mb-5"
               >
                 <h3 className="text-xs font-display font-semibold uppercase tracking-[0.15em] mb-2 opacity-70">
-                  ¿Qué pareja ha ganado?
+                  {full ? "¿Qué pareja ha ganado?" : "Las parejas se van formando"}
                 </h3>
-                <div className="flex flex-col gap-2.5">
+                <div className="grid grid-cols-2 gap-2.5">
                   {[teamA, teamB].map((team, idx) => {
                     const isWinner = winnerTeam === idx;
                     return (
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => setWinnerTeam(idx as 0 | 1)}
-                        className={`flex items-center gap-3 p-3 rounded border-2 transition-all text-left ${
+                        onClick={() => full && setWinnerTeam(idx as 0 | 1)}
+                        disabled={!full}
+                        className={`flex flex-col items-center gap-2 p-3 rounded border-2 transition-all text-center ${
                           isWinner
                             ? "bg-gold-bright border-gold-bright text-wine scale-[1.02] shadow-lg"
-                            : "bg-parchment-deep border-border opacity-80 hover:opacity-100"
-                        }`}
+                            : `bg-parchment-deep border-border ${full ? "opacity-80 hover:opacity-100" : ""}`
+                        } ${!full ? "cursor-default" : ""}`}
                       >
-                        <div className="flex -space-x-3 shrink-0">
-                          {team.map((p) => (
-                            <div
-                              key={p.id}
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-[#f6e9c8] font-display font-bold border-2"
-                              style={{ backgroundColor: p.color, borderColor: p.color }}
-                            >
-                              {p.name.charAt(0).toUpperCase()}
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-display font-semibold text-sm truncate flex items-center gap-1.5">
-                            {isWinner && <CrownIcon className="w-4 h-4 text-wine shrink-0" />}
-                            {team.map((p) => p.name).join(" y ")}
-                          </p>
+                        <p className="text-[10px] font-display font-bold uppercase tracking-wide opacity-60 flex items-center gap-1">
+                          {isWinner && <CrownIcon className="w-3.5 h-3.5 text-wine" />}
+                          Pareja {idx + 1}
+                        </p>
+                        <div className="flex flex-col gap-1.5 w-full">
+                          {[0, 1].map((slot) => {
+                            const p = team[slot];
+                            return p ? (
+                              <div key={p.id} className="flex items-center gap-2 bg-black/5 rounded px-2 py-1">
+                                <div
+                                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#f6e9c8] font-display font-bold text-[10px] shrink-0 border"
+                                  style={{ backgroundColor: p.color, borderColor: p.color }}
+                                >
+                                  {p.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="text-xs font-display font-semibold truncate">{p.name}</span>
+                              </div>
+                            ) : (
+                              <div
+                                key={slot}
+                                className="flex items-center gap-2 border-2 border-dashed border-border/60 rounded px-2 py-1 opacity-40"
+                              >
+                                <span className="text-xs italic">vacío</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </button>
                     );

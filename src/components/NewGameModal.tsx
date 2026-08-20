@@ -7,6 +7,8 @@ import { CameraIcon, CrownIcon, SearchIcon, ShieldIcon, SwordsIcon, XIcon } from
 import Skeleton from "./Skeleton";
 import { resizeImage } from "@/lib/image";
 
+const MAX_PLAYERS = 6;
+
 export default function NewGameModal({
   onClose,
   onSaved,
@@ -50,18 +52,21 @@ export default function NewGameModal({
   }, [allPlayers, search, selectedIds]);
 
   const exactMatch = allPlayers.some((p) => p.name.toLowerCase() === search.trim().toLowerCase());
+  const full = selectedIds.length >= MAX_PLAYERS;
 
   function toggleSelect(player: Player) {
     setError(null);
-    setSelectedIds((prev) =>
-      prev.includes(player.id) ? prev.filter((x) => x !== player.id) : [...prev, player.id]
-    );
+    setSelectedIds((prev) => {
+      if (prev.includes(player.id)) return prev.filter((x) => x !== player.id);
+      if (prev.length >= MAX_PLAYERS) return prev;
+      return [...prev, player.id];
+    });
     if (winnerId === player.id) setWinnerId(null);
   }
 
   async function createAndSelect(name: string) {
     const trimmed = name.trim();
-    if (!trimmed) return;
+    if (!trimmed || full) return;
     setError(null);
     try {
       const res = await fetch("/api/players", {
@@ -76,7 +81,9 @@ export default function NewGameModal({
       }
       const player: Player = await res.json();
       setAllPlayers((prev) => (prev.some((p) => p.id === player.id) ? prev : [...prev, player]));
-      setSelectedIds((prev) => (prev.includes(player.id) ? prev : [...prev, player.id]));
+      setSelectedIds((prev) =>
+        prev.includes(player.id) || prev.length >= MAX_PLAYERS ? prev : [...prev, player.id]
+      );
       setSearch("");
     } catch {
       setError("No se pudo crear el jugador. Comprueba tu conexión.");
@@ -98,6 +105,10 @@ export default function NewGameModal({
   async function confirm() {
     if (selectedIds.length < 2) {
       setError("Selecciona al menos 2 jugadores");
+      return;
+    }
+    if (selectedIds.length > MAX_PLAYERS) {
+      setError(`Máximo ${MAX_PLAYERS} jugadores`);
       return;
     }
     if (!winnerId) {
@@ -158,7 +169,7 @@ export default function NewGameModal({
           {/* Jugadores */}
           <section className="mb-5">
             <h3 className="text-xs font-display font-semibold uppercase tracking-[0.15em] mb-2 opacity-70">
-              Convoca a los jugadores
+              Convoca a los jugadores ({selectedIds.length}/{MAX_PLAYERS})
             </h3>
             <div className="relative mb-2">
               <SearchIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
@@ -169,7 +180,8 @@ export default function NewGameModal({
                   if (e.key === "Enter" && search.trim() && !exactMatch) createAndSelect(search);
                 }}
                 placeholder="Buscar o crear jugador…"
-                className="w-full pl-9 pr-3 py-2 rounded border-2 border-border bg-parchment-deep text-sm focus:outline-none focus:ring-2 focus:ring-gold placeholder:italic placeholder:opacity-60"
+                disabled={full}
+                className="w-full pl-9 pr-3 py-2 rounded border-2 border-border bg-parchment-deep text-sm focus:outline-none focus:ring-2 focus:ring-gold placeholder:italic placeholder:opacity-60 disabled:opacity-50"
               />
             </div>
 
@@ -188,7 +200,8 @@ export default function NewGameModal({
                       key={p.id}
                       type="button"
                       onClick={() => toggleSelect(p)}
-                      className={`px-3 py-1.5 rounded text-sm font-display font-semibold border-2 transition-all flex items-center gap-1.5 ${
+                      disabled={!active && full}
+                      className={`px-3 py-1.5 rounded text-sm font-display font-semibold border-2 transition-all flex items-center gap-1.5 disabled:opacity-30 ${
                         active ? "text-[#f6e9c8] shadow-md scale-105" : "bg-parchment-deep text-foreground/70 border-border hover:border-gold"
                       }`}
                       style={active ? { backgroundColor: p.color, borderColor: p.color } : undefined}
@@ -198,7 +211,7 @@ export default function NewGameModal({
                     </button>
                   );
                 })}
-                {search.trim() !== "" && !exactMatch && (
+                {search.trim() !== "" && !exactMatch && !full && (
                   <button
                     type="button"
                     onClick={() => createAndSelect(search)}
@@ -209,6 +222,11 @@ export default function NewGameModal({
                 )}
                 {visiblePlayers.length === 0 && search.trim() === "" && (
                   <p className="text-xs opacity-50 italic py-1.5">Escribe un nombre para crear al primer jugador.</p>
+                )}
+                {full && (
+                  <p className="text-[11px] opacity-50 italic w-full mt-1">
+                    Máximo {MAX_PLAYERS} jugadores por partida.
+                  </p>
                 )}
               </div>
             )}
