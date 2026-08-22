@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { GameId } from "@/lib/games";
 import type { GamePhoto, PhotosResponse } from "@/lib/types";
-import { CameraIcon, ChevronDownIcon, CrownIcon, GalleryIcon, XIcon } from "./icons";
+import { CameraIcon, ChevronDownIcon, CrownIcon, DownloadIcon, GalleryIcon, XIcon } from "./icons";
 import Skeleton from "./Skeleton";
 import ShareGameButton from "./ShareGameButton";
 
@@ -28,6 +28,11 @@ function formatLong(iso: string) {
 
 function joinNames(players: { name: string }[], game: GameId) {
   return players.map((p) => p.name).join(game === "mus" ? " y " : ", ");
+}
+
+function downloadName(photo: GamePhoto) {
+  const date = photo.created_at.slice(0, 10);
+  return `${photo.game}-${date}-${photo.id}.jpg`;
 }
 
 export default function GalleryView({ game }: { game: GameId }) {
@@ -206,8 +211,11 @@ export default function GalleryView({ game }: { game: GameId }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-3 sm:p-6"
+            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center"
             onClick={() => setOpenIndex(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Vista ampliada de la estampa"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.96, y: 20 }}
@@ -215,20 +223,20 @@ export default function GalleryView({ game }: { game: GameId }) {
               exit={{ opacity: 0, scale: 0.97, y: 10 }}
               transition={{ type: "spring", stiffness: 280, damping: 26 }}
               onClick={(e) => e.stopPropagation()}
-              className="ornate rounded-sm bg-card w-full sm:max-w-lg max-h-[92vh] overflow-y-auto"
+              className="bg-card w-full h-full sm:w-[calc(100%-3rem)] sm:h-[calc(100%-3rem)] sm:max-w-7xl sm:rounded-sm overflow-hidden flex flex-col"
             >
-              <div className="relative">
+              <div className="relative flex-1 min-h-0 bg-black flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={open.image}
                   alt={`Partida ganada por ${joinNames(open.winners, game)}`}
-                  className="w-full max-h-[60vh] object-contain bg-black/40"
+                  className="w-full h-full object-contain"
                 />
                 <button
                   type="button"
                   onClick={() => setOpenIndex(null)}
                   aria-label="Cerrar"
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white/85 hover:text-white hover:bg-black/80 transition-colors"
+                  className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white/85 hover:text-white hover:bg-black/80 transition-colors"
                 >
                   <XIcon className="w-5 h-5" />
                 </button>
@@ -255,8 +263,8 @@ export default function GalleryView({ game }: { game: GameId }) {
                 )}
               </div>
 
-              <div className="p-4 sm:p-5">
-                <div className="flex items-center gap-2 min-w-0">
+              <div className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 shrink-0">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   <div className="flex -space-x-3 shrink-0">
                     {open.winners.map((p) => (
                       <div
@@ -279,14 +287,24 @@ export default function GalleryView({ game }: { game: GameId }) {
                   </div>
                 </div>
 
-                <p className="text-xs opacity-55 italic mt-2">{formatLong(open.created_at)}</p>
-                {!open.counts_for_stats && (
-                  <span className="inline-block mt-2 text-[9px] font-display font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-gold/40 text-gold opacity-80">
-                    No cuenta para el ranking
-                  </span>
-                )}
+                <div className="hidden sm:block ml-3 shrink-0">
+                  <p className="text-xs opacity-55 italic">{formatLong(open.created_at)}</p>
+                  {!open.counts_for_stats && (
+                    <span className="inline-block mt-1 text-[9px] font-display font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-gold/40 text-gold opacity-80">
+                      No cuenta para el ranking
+                    </span>
+                  )}
+                </div>
 
-                <div className="mt-4 flex justify-center">
+                <div className="flex items-center justify-center gap-2 shrink-0">
+                  <a
+                    href={open.image}
+                    download={downloadName(open)}
+                    className="inline-flex items-center gap-2 rounded border border-gold/50 px-3 py-2 text-xs font-display font-semibold uppercase tracking-wide text-gold hover:bg-gold/10 transition-colors"
+                  >
+                    <DownloadIcon className="w-4 h-4" />
+                    Descargar
+                  </a>
                   <ShareGameButton
                     game={game}
                     winners={open.winners}
