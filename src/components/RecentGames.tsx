@@ -6,6 +6,7 @@ import type { GameRecord } from "@/lib/types";
 import { CrownIcon, PencilIcon, ScrollIcon, UndoIcon } from "./icons";
 import Skeleton from "./Skeleton";
 import EditGameModal from "./EditGameModal";
+import PhotoLightbox from "./PhotoLightbox";
 import ShareGameButton from "./ShareGameButton";
 
 const PAGE_SIZE = 6;
@@ -28,6 +29,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
   const [error, setError] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
@@ -86,6 +88,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
 
   const visible = games.slice(0, visibleCount);
   const editingGame = games.find((g) => g.id === editingId) ?? null;
+  const viewingGame = games.find((g) => g.id === viewingId && g.image) ?? null;
 
   return (
     <div className="mt-10">
@@ -149,9 +152,16 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
                   removingId === g.id ? "opacity-40" : ""
                 }`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={g.image} alt="Foto de la partida" className="w-full h-56 sm:h-72 object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
+                <button
+                  type="button"
+                  onClick={() => setViewingId(g.id)}
+                  aria-label="Ampliar foto de la partida"
+                  className="block w-full cursor-zoom-in"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={g.image} alt="Foto de la partida" className="w-full h-56 sm:h-72 object-cover" />
+                </button>
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
                 {!g.counts_for_stats && (
                   <span className="absolute top-2 left-2 text-[10px] font-display font-semibold uppercase tracking-wide px-2 py-0.5 rounded bg-black/60 text-gold-bright border border-gold-bright/40">
                     No cuenta
@@ -295,6 +305,15 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
           }}
         />
       )}
+
+      <PhotoLightbox
+        image={viewingGame?.image ?? null}
+        game="catan"
+        gameId={viewingGame?.id ?? ""}
+        createdAt={viewingGame?.created_at ?? ""}
+        alt={viewingGame ? `Partida ganada por ${viewingGame.winner_name}` : "Foto de la partida"}
+        onClose={() => setViewingId(null)}
+      />
     </div>
   );
 }
