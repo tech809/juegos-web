@@ -7,6 +7,7 @@ type LeaderboardRow = {
   id: string;
   name: string;
   color: string;
+  photo?: string | null;
   games_played: number;
   wins: number;
   win_rate: number;
@@ -31,7 +32,7 @@ async function getRealYearStats(year: string) {
   const leaderboard = await db.execute({
     sql: `
       SELECT
-        p.id, p.name, p.color,
+        p.id, p.name, p.color, p.photo,
         COUNT(g.id) AS games_played,
         SUM(CASE WHEN g.winner_id = p.id THEN 1 ELSE 0 END) AS wins
       FROM players p
@@ -92,6 +93,7 @@ async function getRealYearStats(year: string) {
       id: String(p.id),
       name: String(p.name),
       color: String(p.color),
+      photo: p.photo ? String(p.photo) : null,
       games_played: gamesPlayed,
       wins,
       win_rate: gamesPlayed > 0 ? wins / gamesPlayed : 0,
@@ -113,7 +115,7 @@ async function getRealYearStats(year: string) {
 async function getLegacyYearStats(year: string) {
   const rows = await db.execute({
     sql: `
-      SELECT p.id, p.name, p.color, ls.games_played, ls.wins
+      SELECT p.id, p.name, p.color, p.photo, ls.games_played, ls.wins
       FROM legacy_stats ls
       JOIN players p ON p.id = ls.player_id
       WHERE ls.game = 'catan' AND ls.year = ?
@@ -128,6 +130,7 @@ async function getLegacyYearStats(year: string) {
       id: String(r.id),
       name: String(r.name),
       color: String(r.color),
+      photo: r.photo ? String(r.photo) : null,
       games_played: gamesPlayed,
       wins,
       win_rate: gamesPlayed > 0 ? wins / gamesPlayed : 0,
@@ -162,9 +165,12 @@ async function getHistoricoCompleto() {
     "SELECT player_id, games_played, wins FROM legacy_stats WHERE game = 'catan'"
   );
 
-  const playersMeta = await db.execute("SELECT id, name, color FROM players");
+  const playersMeta = await db.execute("SELECT id, name, color, photo FROM players");
   const metaById = new Map(
-    playersMeta.rows.map((p) => [String(p.id), { name: String(p.name), color: String(p.color) }])
+    playersMeta.rows.map((p) => [
+      String(p.id),
+      { name: String(p.name), color: String(p.color), photo: p.photo ? String(p.photo) : null },
+    ])
   );
 
   const totals = new Map<string, { games_played: number; wins: number }>();
@@ -189,6 +195,7 @@ async function getHistoricoCompleto() {
         id,
         name: meta?.name ?? "?",
         color: meta?.color ?? "#7f8c8d",
+        photo: meta?.photo ?? null,
         games_played: t.games_played,
         wins: t.wins,
         win_rate: t.games_played > 0 ? t.wins / t.games_played : 0,

@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Player } from "@/lib/types";
-import { CameraIcon, CheckIcon, ChevronDownIcon, CrownIcon, SearchIcon, ShieldIcon, SwordsIcon, XIcon } from "./icons";
+import { CameraIcon, CheckIcon, ChevronDownIcon, CrownIcon, PencilIcon, SearchIcon, ShieldIcon, SwordsIcon, XIcon } from "./icons";
 import Skeleton from "./Skeleton";
 import ImageEditModal from "./ImageEditModal";
+import PlayerAvatar from "./PlayerAvatar";
 
 const MAX_PLAYERS = 6;
 
@@ -22,7 +23,7 @@ export default function NewGameModal({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [image, setImage] = useState<string | null>(null);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [editingSource, setEditingSource] = useState<File | string | null>(null);
   const [countsForStats, setCountsForStats] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +108,7 @@ export default function NewGameModal({
 
   function handleFile(file: File | undefined) {
     if (!file) return;
-    setPendingFile(file);
+    setEditingSource(file);
   }
 
   async function confirm() {
@@ -253,12 +254,7 @@ export default function NewGameModal({
                               disabled={!active && full}
                               className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-display font-semibold text-left hover:bg-gold/10 transition-colors disabled:opacity-30"
                             >
-                              <span
-                                className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-[#f6e9c8] font-bold shrink-0"
-                                style={{ backgroundColor: p.color }}
-                              >
-                                {p.name.charAt(0).toUpperCase()}
-                              </span>
+                              <PlayerAvatar name={p.name} color={p.color} photo={p.photo} size={20} />
                               <span className="flex-1">{p.name}</span>
                               {active && <CheckIcon className="w-4 h-4 text-gold shrink-0" />}
                             </button>
@@ -338,14 +334,24 @@ export default function NewGameModal({
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={image} alt="Foto de la partida" className="w-full h-36 object-cover rounded border-2 border-border" />
-                <button
-                  type="button"
-                  onClick={() => setImage(null)}
-                  className="absolute top-1.5 right-1.5 bg-black/60 text-white rounded-full p-1"
-                  aria-label="Quitar imagen"
-                >
-                  <XIcon className="w-3.5 h-3.5" />
-                </button>
+                <div className="absolute top-1.5 right-1.5 flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setEditingSource(image)}
+                    className="bg-black/60 text-white rounded-full p-1"
+                    aria-label="Editar imagen"
+                  >
+                    <PencilIcon className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImage(null)}
+                    className="bg-black/60 text-white rounded-full p-1"
+                    aria-label="Quitar imagen"
+                  >
+                    <XIcon className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             ) : (
               <button
@@ -397,13 +403,13 @@ export default function NewGameModal({
       </motion.div>
     </AnimatePresence>
     <AnimatePresence>
-      {pendingFile && (
+      {editingSource && (
         <ImageEditModal
-          file={pendingFile}
-          onCancel={() => setPendingFile(null)}
+          source={editingSource}
+          onCancel={() => setEditingSource(null)}
           onConfirm={(dataUrl) => {
             setImage(dataUrl);
-            setPendingFile(null);
+            setEditingSource(null);
           }}
         />
       )}

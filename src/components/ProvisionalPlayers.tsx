@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { LeaderboardEntry } from "@/lib/types";
 import type { GameId } from "@/lib/games";
 import { gameBasePath } from "@/lib/games";
+import PlayerAvatar from "@/components/PlayerAvatar";
 
 /**
  * Jugadores con muy pocas partidas. Van aparte del ranking porque un
@@ -36,12 +37,7 @@ export default function ProvisionalPlayers({
             href={`${base}/jugadores/${p.id}`}
             className="bg-card border-2 border-border rounded-sm px-3 py-2 flex items-center gap-2 hover:border-gold transition-colors"
           >
-            <span
-              className="w-7 h-7 rounded-full flex items-center justify-center text-[#f6e9c8] font-display font-bold text-xs shrink-0"
-              style={{ backgroundColor: p.color }}
-            >
-              {p.name.charAt(0).toUpperCase()}
-            </span>
+            <PlayerAvatar name={p.name} color={p.color} photo={p.photo} size={28} />
             <span className="min-w-0">
               <span className="font-display font-semibold text-sm block truncate">{p.name}</span>
               <span className="text-[11px] opacity-60">

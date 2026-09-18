@@ -22,6 +22,7 @@ export async function ensureSchema() {
     "ALTER TABLE games ADD COLUMN winner_team INTEGER",
     "ALTER TABLE game_players ADD COLUMN team INTEGER",
     "ALTER TABLE games ADD COLUMN counts_for_stats INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE players ADD COLUMN photo TEXT",
   ];
   for (const migration of migrations) {
     try {

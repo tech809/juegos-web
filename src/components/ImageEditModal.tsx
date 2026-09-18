@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckIcon, UndoIcon, XIcon } from "./icons";
+import { CheckIcon, FlipIcon, UndoIcon, XIcon } from "./icons";
 
 type Rect = { x: number; y: number; w: number; h: number };
 
@@ -29,16 +29,40 @@ function rotateImage(src: string, quarterTurns: 1 | 3): Promise<string> {
   });
 }
 
+/** Voltea una imagen horizontalmente (espejo) y devuelve su dataURL. */
+function flipImage(src: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error("No se pudo voltear la imagen"));
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("No se pudo voltear la imagen"));
+        return;
+      }
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL("image/jpeg", 0.92));
+    };
+    img.src = src;
+  });
+}
+
 function clamp01(n: number) {
   return Math.min(1, Math.max(0, n));
 }
 
 export default function ImageEditModal({
-  file,
+  source,
   onCancel,
   onConfirm,
 }: {
-  file: File;
+  /** Un fichero recién elegido, o el dataURL de una foto ya subida para re-editarla. */
+  source: File | string;
   onCancel: () => void;
   onConfirm: (dataUrl: string) => void;
 }) {
@@ -49,10 +73,14 @@ export default function ImageEditModal({
   const dragStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
+    if (typeof source === "string") {
+      setSrcUrl(source);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => setSrcUrl(reader.result as string);
-    reader.readAsDataURL(file);
-  }, [file]);
+    reader.readAsDataURL(source);
+  }, [source]);
 
   async function handleRotate(dir: 1 | 3) {
     if (!srcUrl || busy) return;
@@ -63,6 +91,20 @@ export default function ImageEditModal({
       setCropRect(null);
     } catch {
       // si falla el giro, se queda la imagen tal cual estaba
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleFlip() {
+    if (!srcUrl || busy) return;
+    setBusy(true);
+    try {
+      const flipped = await flipImage(srcUrl);
+      setSrcUrl(flipped);
+      setCropRect(null);
+    } catch {
+      // si falla el volteo, se queda la imagen tal cual estaba
     } finally {
       setBusy(false);
     }
@@ -190,6 +232,14 @@ export default function ImageEditModal({
                 className="px-3 py-1.5 rounded text-sm font-display font-semibold border-2 border-border hover:border-gold flex items-center gap-1.5 disabled:opacity-50"
               >
                 <UndoIcon className="w-4 h-4 scale-x-[-1]" /> Girar der.
+              </button>
+              <button
+                type="button"
+                onClick={handleFlip}
+                disabled={busy}
+                className="px-3 py-1.5 rounded text-sm font-display font-semibold border-2 border-border hover:border-gold flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <FlipIcon className="w-4 h-4" /> Voltear
               </button>
               {cropRect && (
                 <button

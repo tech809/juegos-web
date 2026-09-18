@@ -241,6 +241,15 @@ export function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
+export function FlipIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3v18" strokeDasharray="2.5 3" />
+      <path d="M7 8L4 12l3 4M17 8l3 4-3 4" />
+    </svg>
+  );
+}
+
 export function TrophyIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">

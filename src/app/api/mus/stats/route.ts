@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
  * Con muy pocas partidas el porcentaje engaña (1 de 1 = 100%), así que
  * quien no llega al mínimo se aparta a una lista provisional.
  */
-const MIN_RANKED_GAMES = 6;
+const MIN_RANKED_GAMES = 3;
 
 export async function GET() {
   await ensureSchema();
@@ -20,7 +20,7 @@ export async function GET() {
 
   const leaderboard = await db.execute(`
     SELECT
-      p.id, p.name, p.color,
+      p.id, p.name, p.color, p.photo,
       COUNT(gp.game_id) AS games_played,
       SUM(CASE WHEN gp.team = g.winner_team THEN 1 ELSE 0 END) AS wins
     FROM players p
@@ -80,6 +80,7 @@ export async function GET() {
         id: String(p.id),
         name: String(p.name),
         color: String(p.color),
+        photo: p.photo ? String(p.photo) : null,
         games_played: gamesPlayed,
         wins,
         win_rate: gamesPlayed > 0 ? wins / gamesPlayed : 0,

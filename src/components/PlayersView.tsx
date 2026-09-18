@@ -7,6 +7,7 @@ import type { GameId } from "@/lib/games";
 import { gameBasePath } from "@/lib/games";
 import RadialStat from "@/components/RadialStat";
 import Skeleton from "@/components/Skeleton";
+import PlayerAvatar from "@/components/PlayerAvatar";
 import PlayerEditModal from "@/components/PlayerEditModal";
 import { computeBadges, BADGE_TONE_CLASS } from "@/lib/badges";
 import { CardsIcon, PencilIcon, ShieldIcon, XIcon } from "@/components/icons";
@@ -172,12 +173,7 @@ export default function PlayersView({ game }: { game: GameId }) {
                   className="ornate rounded-sm p-4 pr-12 h-full flex items-center gap-4 hover:brightness-105 transition-all"
                 >
                   <RadialStat percent={percent} color={p.color} size={56}>
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-[#f6e9c8] font-display font-bold text-sm border-2"
-                      style={{ backgroundColor: p.color, borderColor: p.color }}
-                    >
-                      {p.name.charAt(0).toUpperCase()}
-                    </div>
+                    <PlayerAvatar name={p.name} color={p.color} photo={p.photo} size={36} bordered />
                   </RadialStat>
                   <div className="min-w-0">
                     <p className="font-display font-bold text-lg truncate">{p.name}</p>

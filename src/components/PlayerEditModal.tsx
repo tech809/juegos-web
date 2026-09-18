@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Player } from "@/lib/types";
 import { PLAYER_COLORS } from "@/lib/colors";
-import { CheckIcon, MergeIcon, PencilIcon, SearchIcon, SwordsIcon, XIcon } from "./icons";
+import { CameraIcon, CheckIcon, MergeIcon, PencilIcon, SearchIcon, SwordsIcon, XIcon } from "./icons";
+import PlayerAvatar from "./PlayerAvatar";
+import ImageEditModal from "./ImageEditModal";
 
 /**
  * Edición de un jugador: renombrar, cambiar color, fusionarlo con otro
@@ -25,8 +27,11 @@ export default function PlayerEditModal({
 }) {
   const [name, setName] = useState(player.name);
   const [color, setColor] = useState(player.color);
+  const [photo, setPhoto] = useState<string | null>(player.photo ?? null);
+  const [editingSource, setEditingSource] = useState<File | string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
@@ -45,7 +50,8 @@ export default function PlayerEditModal({
   }, [others, mergeSearch]);
 
   const mergeTarget = others.find((p) => p.id === mergeTargetId) ?? null;
-  const dirty = name.trim() !== player.name || color !== player.color;
+  const dirty =
+    name.trim() !== player.name || color !== player.color || photo !== (player.photo ?? null);
 
   async function save() {
     const trimmed = name.trim();
@@ -59,7 +65,7 @@ export default function PlayerEditModal({
       const res = await fetch(`/api/players/${player.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed, color }),
+        body: JSON.stringify({ name: trimmed, color, photo }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -165,6 +171,56 @@ export default function PlayerEditModal({
               onKeyDown={(e) => e.key === "Enter" && save()}
               className="w-full px-3 py-2.5 rounded border-2 border-border bg-parchment-deep text-sm focus:outline-none focus:ring-2 focus:ring-gold"
             />
+          </section>
+
+          {/* Foto */}
+          <section className="mb-5">
+            <h3 className="text-xs font-display font-semibold uppercase tracking-[0.15em] mb-2 opacity-70">
+              Retrato
+            </h3>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) setEditingSource(file);
+                e.target.value = "";
+              }}
+            />
+            <div className="flex items-center gap-3">
+              <PlayerAvatar name={name || player.name} color={color} photo={photo} size={56} bordered />
+              <div className="flex flex-col gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="px-3 py-1.5 rounded text-xs font-display font-semibold border-2 border-border hover:border-gold flex items-center gap-1.5"
+                >
+                  <CameraIcon className="w-3.5 h-3.5" />
+                  {photo ? "Cambiar foto" : "Subir foto"}
+                </button>
+                {photo && (
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setEditingSource(photo)}
+                      className="px-3 py-1.5 rounded text-xs font-display font-semibold border-2 border-border hover:border-gold flex items-center gap-1.5"
+                    >
+                      <PencilIcon className="w-3.5 h-3.5" />
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhoto(null)}
+                      className="px-3 py-1.5 rounded text-xs font-display font-semibold border-2 border-dashed border-border opacity-70 hover:opacity-100"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </section>
 
           {/* Color */}
@@ -328,6 +384,16 @@ export default function PlayerEditModal({
           </div>
         </motion.div>
       </motion.div>
+      {editingSource && (
+        <ImageEditModal
+          source={editingSource}
+          onCancel={() => setEditingSource(null)}
+          onConfirm={(dataUrl) => {
+            setPhoto(dataUrl);
+            setEditingSource(null);
+          }}
+        />
+      )}
     </AnimatePresence>
   );
 }

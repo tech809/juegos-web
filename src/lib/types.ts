@@ -2,6 +2,7 @@ export type Player = {
   id: string;
   name: string;
   color: string;
+  photo?: string | null;
   games_played?: number;
   wins?: number;
 };
@@ -170,7 +171,7 @@ export type WrappedData = {
 };
 
 export type PlayerProfile = {
-  player: { id: string; name: string; color: string };
+  player: { id: string; name: string; color: string; photo?: string | null };
   game: "catan" | "mus";
   stats: {
     games_played: number;

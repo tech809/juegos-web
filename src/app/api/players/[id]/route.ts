@@ -14,7 +14,7 @@ export async function GET(
   const { id } = await params;
 
   const playerRes = await db.execute({
-    sql: "SELECT id, name, color, game FROM players WHERE id = ?",
+    sql: "SELECT id, name, color, photo, game FROM players WHERE id = ?",
     args: [id],
   });
   if (playerRes.rows.length === 0) {
@@ -26,6 +26,7 @@ export async function GET(
     id: String(playerRow.id),
     name: String(playerRow.name),
     color: String(playerRow.color),
+    photo: playerRow.photo ? String(playerRow.photo) : null,
   };
 
   const gamesRes = await db.execute({
@@ -172,7 +173,7 @@ export async function PATCH(
   await ensureSchema();
   const { id } = await params;
 
-  let body: { name?: unknown; color?: unknown };
+  let body: { name?: unknown; color?: unknown; photo?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -180,7 +181,7 @@ export async function PATCH(
   }
 
   const current = await db.execute({
-    sql: "SELECT id, name, color, game FROM players WHERE id = ?",
+    sql: "SELECT id, name, color, photo, game FROM players WHERE id = ?",
     args: [id],
   });
   if (current.rows.length === 0) {
@@ -215,16 +216,30 @@ export async function PATCH(
     color = body.color;
   }
 
+  let photo = row.photo ? String(row.photo) : null;
+  if (body.photo !== undefined) {
+    if (body.photo === null) {
+      photo = null;
+    } else if (typeof body.photo === "string" && body.photo.startsWith("data:image/")) {
+      if (body.photo.length > 2_000_000) {
+        return NextResponse.json({ error: "La foto es demasiado grande" }, { status: 400 });
+      }
+      photo = body.photo;
+    } else {
+      return NextResponse.json({ error: "Foto inválida" }, { status: 400 });
+    }
+  }
+
   try {
     await db.execute({
-      sql: "UPDATE players SET name = ?, color = ? WHERE id = ?",
-      args: [name, color, id],
+      sql: "UPDATE players SET name = ?, color = ?, photo = ? WHERE id = ?",
+      args: [name, color, photo, id],
     });
   } catch {
     return NextResponse.json({ error: "No se pudo guardar el jugador" }, { status: 500 });
   }
 
-  return NextResponse.json({ id, name, color, game });
+  return NextResponse.json({ id, name, color, photo, game });
 }
 
 /**

@@ -9,6 +9,7 @@ import Skeleton from "@/components/Skeleton";
 import ActivityStats from "@/components/ActivityStats";
 import AdvancedStats from "@/components/AdvancedStats";
 import ProvisionalPlayers from "@/components/ProvisionalPlayers";
+import PlayerAvatar from "@/components/PlayerAvatar";
 import { computeBadges, BADGE_TONE_CLASS } from "@/lib/badges";
 import { CardsIcon, FlameIcon, LaurelIcon } from "@/components/icons";
 
@@ -90,18 +91,7 @@ export default function MusEstadisticasPage() {
             >
               <span className="text-2xl mb-1">{style.medal}</span>
               <RadialStat percent={Math.round(p.win_rate * 100)} color={p.color} size={style.ring} strokeWidth={5}>
-                <div
-                  className="rounded-full flex items-center justify-center text-[#f6e9c8] font-display font-black border-2"
-                  style={{
-                    backgroundColor: p.color,
-                    borderColor: p.color,
-                    width: style.avatar,
-                    height: style.avatar,
-                    fontSize: style.avatar / 2.4,
-                  }}
-                >
-                  {p.name.charAt(0).toUpperCase()}
-                </div>
+                <PlayerAvatar name={p.name} color={p.color} photo={p.photo} size={style.avatar} bordered />
               </RadialStat>
               <p className="font-display font-bold text-sm mt-2 truncate max-w-full">{p.name}</p>
               <p className="text-[11px] opacity-70">
@@ -142,12 +132,7 @@ export default function MusEstadisticasPage() {
                   {rank}
                 </div>
                 <RadialStat percent={Math.round(p.win_rate * 100)} color={p.color} size={44} strokeWidth={4}>
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-[#f6e9c8] font-display font-bold text-xs"
-                    style={{ backgroundColor: p.color }}
-                  >
-                    {p.name.charAt(0).toUpperCase()}
-                  </div>
+                  <PlayerAvatar name={p.name} color={p.color} photo={p.photo} size={28} />
                 </RadialStat>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
@@ -175,7 +160,7 @@ export default function MusEstadisticasPage() {
 
       <ProvisionalPlayers
         players={stats.provisional ?? []}
-        minGames={stats.minRankedGames ?? 6}
+        minGames={stats.minRankedGames ?? 3}
         game="mus"
       />
 

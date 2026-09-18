@@ -21,6 +21,7 @@ export async function GET(request: Request) {
         p.id,
         p.name,
         p.color,
+        p.photo,
         COUNT(g.id) AS games_played,
         SUM(CASE WHEN ${winCondition} THEN 1 ELSE 0 END) AS wins
       FROM players p
@@ -67,6 +68,7 @@ export async function GET(request: Request) {
         id: String(p.id),
         name: String(p.name),
         color: String(p.color),
+        photo: p.photo ? String(p.photo) : null,
         games_played: Number(p.games_played) + (extra?.games_played ?? 0),
         wins: Number(p.wins) + (extra?.wins ?? 0),
         last_played: lastPlayedById.get(String(p.id)) ?? null,
@@ -97,7 +99,7 @@ export async function POST(request: Request) {
   }
 
   const existing = await db.execute({
-    sql: "SELECT id, name, color FROM players WHERE name = ? COLLATE NOCASE AND game = ?",
+    sql: "SELECT id, name, color, photo FROM players WHERE name = ? COLLATE NOCASE AND game = ?",
     args: [trimmed, game],
   });
   if (existing.rows.length > 0) {
@@ -120,7 +122,7 @@ export async function POST(request: Request) {
   } catch {
     // Posible condición de carrera: alguien creó el mismo nombre justo antes.
     const retry = await db.execute({
-      sql: "SELECT id, name, color FROM players WHERE name = ? COLLATE NOCASE AND game = ?",
+      sql: "SELECT id, name, color, photo FROM players WHERE name = ? COLLATE NOCASE AND game = ?",
       args: [trimmed, game],
     });
     if (retry.rows.length > 0) {

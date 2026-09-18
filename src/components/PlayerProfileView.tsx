@@ -9,6 +9,7 @@ import { gameBasePath } from "@/lib/games";
 import RadialStat from "@/components/RadialStat";
 import CountUp from "@/components/CountUp";
 import Skeleton from "@/components/Skeleton";
+import PlayerAvatar from "@/components/PlayerAvatar";
 import { computeBadges, BADGE_TONE_CLASS } from "@/lib/badges";
 import { CrownIcon, FlameIcon, ScrollIcon, ShieldIcon, SwordsIcon } from "@/components/icons";
 
@@ -75,12 +76,7 @@ export default function PlayerProfileView({ game }: { game: GameId }) {
 
       <div className="ornate rounded-sm p-5 sm:p-8 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
         <RadialStat percent={ratePercent} color={player.color} size={92} strokeWidth={6}>
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center text-[#f6e9c8] font-display font-black text-2xl border-2"
-            style={{ backgroundColor: player.color, borderColor: player.color }}
-          >
-            {player.name.charAt(0).toUpperCase()}
-          </div>
+          <PlayerAvatar name={player.name} color={player.color} photo={player.photo} size={64} bordered />
         </RadialStat>
         <div>
           <h2 className="font-display text-2xl sm:text-3xl font-bold">{player.name}</h2>

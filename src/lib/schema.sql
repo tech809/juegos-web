@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS players (
   name TEXT NOT NULL,
   color TEXT NOT NULL,
   game TEXT NOT NULL DEFAULT 'catan',
+  photo TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

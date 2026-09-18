@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AllianceIcon, CardsIcon, CheckIcon, ChevronDownIcon, CrestIcon, GalleryIcon, TrophyIcon } from "./icons";
 
-const LINK_ICON: Record<string, typeof AllianceIcon> = {
+const LINK_ICON: Record<string, typeof AllianceIcon | undefined> = {
   Jugadores: AllianceIcon,
   Galería: GalleryIcon,
   "Sala de la Fama": TrophyIcon,
@@ -150,14 +150,17 @@ export default function Nav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-2.5 py-1.5 rounded text-xs sm:text-sm font-display font-semibold tracking-wide uppercase whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                title={link.label}
+                aria-label={link.label}
+                className={`rounded text-xs sm:text-sm font-display font-semibold tracking-wide uppercase whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                  Icon ? "p-2 sm:p-2.5" : "px-2.5 py-1.5"
+                } ${
                   active
                     ? "bg-gold-bright text-wine border-gold-bright shadow-sm"
                     : "text-[#f2e4bd]/85 border-transparent hover:border-gold-bright/50 hover:bg-white/5"
                 }`}
               >
-                {Icon && <Icon className="w-3.5 h-3.5 shrink-0" />}
-                {link.label}
+                {Icon ? <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" /> : link.label}
               </Link>
             );
           })}
