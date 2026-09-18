@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Player } from "@/lib/types";
-import { CameraIcon, CrownIcon, SearchIcon, ShieldIcon, SwordsIcon, XIcon } from "./icons";
+import { CameraIcon, CheckIcon, ChevronDownIcon, CrownIcon, SearchIcon, ShieldIcon, SwordsIcon, XIcon } from "./icons";
 import Skeleton from "./Skeleton";
-import { resizeImage } from "@/lib/image";
+import ImageEditModal from "./ImageEditModal";
 
 const MAX_PLAYERS = 6;
 
@@ -22,11 +22,24 @@ export default function NewGameModal({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [image, setImage] = useState<string | null>(null);
-  const [processingImage, setProcessingImage] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [countsForStats, setCountsForStats] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [playersOpen, setPlayersOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const playersRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!playersOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (playersRef.current && !playersRef.current.contains(e.target as Node)) {
+        setPlayersOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [playersOpen]);
 
   useEffect(() => {
     fetch("/api/players?game=catan")
@@ -46,9 +59,11 @@ export default function NewGameModal({
 
   const visiblePlayers = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return allPlayers;
-    // los ya seleccionados se quedan siempre visibles, aunque no coincidan con la búsqueda
-    return allPlayers.filter((p) => selectedIds.includes(p.id) || p.name.toLowerCase().includes(term));
+    const base = !term
+      ? allPlayers
+      : // los ya seleccionados se quedan siempre visibles, aunque no coincidan con la búsqueda
+        allPlayers.filter((p) => selectedIds.includes(p.id) || p.name.toLowerCase().includes(term));
+    return [...base].sort((a, b) => a.name.localeCompare(b.name, "es"));
   }, [allPlayers, search, selectedIds]);
 
   const exactMatch = allPlayers.some((p) => p.name.toLowerCase() === search.trim().toLowerCase());
@@ -90,16 +105,9 @@ export default function NewGameModal({
     }
   }
 
-  async function handleFile(file: File | undefined) {
+  function handleFile(file: File | undefined) {
     if (!file) return;
-    setProcessingImage(true);
-    try {
-      setImage(await resizeImage(file));
-    } catch {
-      // si falla el procesado, simplemente no se adjunta imagen
-    } finally {
-      setProcessingImage(false);
-    }
+    setPendingFile(file);
   }
 
   async function confirm() {
@@ -140,6 +148,7 @@ export default function NewGameModal({
   const ready = selectedIds.length >= 2 && Boolean(winnerId);
 
   return (
+    <>
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
@@ -167,69 +176,117 @@ export default function NewGameModal({
           </div>
 
           {/* Jugadores */}
-          <section className="mb-5">
+          <section className="mb-5 relative" ref={playersRef}>
             <h3 className="text-xs font-display font-semibold uppercase tracking-[0.15em] mb-2 opacity-70">
               Convoca a los jugadores ({selectedIds.length}/{MAX_PLAYERS})
             </h3>
-            <div className="relative mb-2">
-              <SearchIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && search.trim() && !exactMatch) createAndSelect(search);
-                }}
-                placeholder="Buscar o crear jugador…"
-                disabled={full}
-                className="w-full pl-9 pr-3 py-2 rounded border-2 border-border bg-parchment-deep text-sm focus:outline-none focus:ring-2 focus:ring-gold placeholder:italic placeholder:opacity-60 disabled:opacity-50"
-              />
-            </div>
 
-            {loading ? (
-              <div className="flex flex-wrap gap-2">
-                {[0, 1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-9 w-20" />
+            <button
+              type="button"
+              onClick={() => setPlayersOpen((v) => !v)}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded border-2 border-border bg-parchment-deep text-sm hover:border-gold transition-colors"
+            >
+              <span className="opacity-70 flex items-center gap-1.5">
+                <ShieldIcon className="w-3.5 h-3.5" />
+                {selectedPlayers.length === 0 ? "Elegir jugadores…" : "Añadir o quitar jugadores"}
+              </span>
+              <ChevronDownIcon className={`w-4 h-4 opacity-60 transition-transform ${playersOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {selectedPlayers.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {selectedPlayers.map((p) => (
+                  <span
+                    key={p.id}
+                    className="px-2.5 py-1 rounded text-xs font-display font-semibold text-[#f6e9c8] flex items-center gap-1.5"
+                    style={{ backgroundColor: p.color }}
+                  >
+                    {p.name}
+                    <button type="button" onClick={() => toggleSelect(p)} aria-label={`Quitar a ${p.name}`}>
+                      <XIcon className="w-3 h-3" />
+                    </button>
+                  </span>
                 ))}
               </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {visiblePlayers.map((p) => {
-                  const active = selectedIds.includes(p.id);
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => toggleSelect(p)}
-                      disabled={!active && full}
-                      className={`px-3 py-1.5 rounded text-sm font-display font-semibold border-2 transition-all flex items-center gap-1.5 disabled:opacity-30 ${
-                        active ? "text-[#f6e9c8] shadow-md scale-105" : "bg-parchment-deep text-foreground/70 border-border hover:border-gold"
-                      }`}
-                      style={active ? { backgroundColor: p.color, borderColor: p.color } : undefined}
-                    >
-                      <ShieldIcon className="w-3.5 h-3.5 opacity-80" />
-                      {p.name}
-                    </button>
-                  );
-                })}
-                {search.trim() !== "" && !exactMatch && !full && (
-                  <button
-                    type="button"
-                    onClick={() => createAndSelect(search)}
-                    className="px-3 py-1.5 rounded text-sm font-display font-semibold border-2 border-dashed border-forest text-forest hover:bg-forest/10 transition-all"
-                  >
-                    + Crear &ldquo;{search.trim()}&rdquo;
-                  </button>
-                )}
-                {visiblePlayers.length === 0 && search.trim() === "" && (
-                  <p className="text-xs opacity-50 italic py-1.5">Escribe un nombre para crear al primer jugador.</p>
-                )}
-                {full && (
-                  <p className="text-[11px] opacity-50 italic w-full mt-1">
-                    Máximo {MAX_PLAYERS} jugadores por partida.
-                  </p>
-                )}
-              </div>
             )}
+
+            <AnimatePresence>
+              {playersOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute left-0 right-0 top-full mt-1 z-20"
+                >
+                  <div className="ornate bg-card rounded-sm overflow-hidden">
+                    <div className="relative p-2 border-b-2 border-border">
+                      <SearchIcon className="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 opacity-50" />
+                      <input
+                        autoFocus
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && search.trim() && !exactMatch) createAndSelect(search);
+                        }}
+                        placeholder="Buscar o crear jugador…"
+                        disabled={full}
+                        className="w-full pl-8 pr-2 py-1.5 rounded border-2 border-border bg-parchment-deep text-sm focus:outline-none focus:ring-2 focus:ring-gold placeholder:italic placeholder:opacity-60 disabled:opacity-50"
+                      />
+                    </div>
+
+                    {loading ? (
+                      <div className="p-2 space-y-1.5">
+                        {[0, 1, 2, 3].map((i) => (
+                          <Skeleton key={i} className="h-8 w-full" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="max-h-52 overflow-y-auto py-1">
+                        {visiblePlayers.map((p) => {
+                          const active = selectedIds.includes(p.id);
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => toggleSelect(p)}
+                              disabled={!active && full}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-display font-semibold text-left hover:bg-gold/10 transition-colors disabled:opacity-30"
+                            >
+                              <span
+                                className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-[#f6e9c8] font-bold shrink-0"
+                                style={{ backgroundColor: p.color }}
+                              >
+                                {p.name.charAt(0).toUpperCase()}
+                              </span>
+                              <span className="flex-1">{p.name}</span>
+                              {active && <CheckIcon className="w-4 h-4 text-gold shrink-0" />}
+                            </button>
+                          );
+                        })}
+                        {search.trim() !== "" && !exactMatch && !full && (
+                          <button
+                            type="button"
+                            onClick={() => createAndSelect(search)}
+                            className="w-full text-left px-3 py-2 text-sm font-display font-semibold border-t border-border text-forest hover:bg-forest/10 transition-colors"
+                          >
+                            + Crear &ldquo;{search.trim()}&rdquo;
+                          </button>
+                        )}
+                        {visiblePlayers.length === 0 && search.trim() === "" && (
+                          <p className="text-xs opacity-50 italic px-3 py-2">Escribe un nombre para crear al primer jugador.</p>
+                        )}
+                        {full && (
+                          <p className="text-[11px] opacity-50 italic px-3 py-2">
+                            Máximo {MAX_PLAYERS} jugadores por partida.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </section>
 
           {/* Ganador */}
@@ -294,11 +351,10 @@ export default function NewGameModal({
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                disabled={processingImage}
                 className="w-full py-3 rounded border-2 border-dashed border-border text-sm font-display flex items-center justify-center gap-2 opacity-70 hover:opacity-100 hover:border-gold transition-colors"
               >
                 <CameraIcon className="w-4 h-4" />
-                {processingImage ? "Procesando…" : "Añadir foto (opcional)"}
+                Añadir foto (opcional)
               </button>
             )}
           </section>
@@ -340,5 +396,18 @@ export default function NewGameModal({
         </motion.div>
       </motion.div>
     </AnimatePresence>
+    <AnimatePresence>
+      {pendingFile && (
+        <ImageEditModal
+          file={pendingFile}
+          onCancel={() => setPendingFile(null)}
+          onConfirm={(dataUrl) => {
+            setImage(dataUrl);
+            setPendingFile(null);
+          }}
+        />
+      )}
+    </AnimatePresence>
+    </>
   );
 }

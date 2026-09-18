@@ -241,6 +241,16 @@ export function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
+export function TrophyIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 4h10v5a5 5 0 01-10 0V4z" fill="currentColor" fillOpacity="0.2" />
+      <path d="M7 5H4v2a3 3 0 003 3M17 5h3v2a3 3 0 01-3 3" />
+      <path d="M12 14v3M9 20h6M8.5 20v-2.2c0-.6.4-1 1-1h5c.6 0 1 .4 1 1V20" />
+    </svg>
+  );
+}
+
 export function AllianceIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">

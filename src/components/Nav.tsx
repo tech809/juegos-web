@@ -4,7 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CardsIcon, CheckIcon, ChevronDownIcon, CrestIcon } from "./icons";
+import { AllianceIcon, CardsIcon, CheckIcon, ChevronDownIcon, CrestIcon, GalleryIcon, TrophyIcon } from "./icons";
+
+const LINK_ICON: Record<string, typeof AllianceIcon> = {
+  Jugadores: AllianceIcon,
+  Galería: GalleryIcon,
+  "Sala de la Fama": TrophyIcon,
+};
 
 export const GAMES = {
   catan: {
@@ -139,16 +145,18 @@ export default function Nav() {
         <nav className="flex gap-1 sm:gap-2 overflow-x-auto">
           {game.links.map((link) => {
             const active = pathname === link.href;
+            const Icon = LINK_ICON[link.label];
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-2.5 py-1.5 rounded text-xs sm:text-sm font-display font-semibold tracking-wide uppercase whitespace-nowrap transition-all border ${
+                className={`px-2.5 py-1.5 rounded text-xs sm:text-sm font-display font-semibold tracking-wide uppercase whitespace-nowrap transition-all border flex items-center gap-1.5 ${
                   active
                     ? "bg-gold-bright text-wine border-gold-bright shadow-sm"
                     : "text-[#f2e4bd]/85 border-transparent hover:border-gold-bright/50 hover:bg-white/5"
                 }`}
               >
+                {Icon && <Icon className="w-3.5 h-3.5 shrink-0" />}
                 {link.label}
               </Link>
             );
