@@ -5,6 +5,8 @@ export type Player = {
   photo?: string | null;
   games_played?: number;
   wins?: number;
+  /** Partidas jugadas en los últimos 365 días (cuenten o no para el ranking). */
+  games_last_year?: number;
 };
 
 export type GameRecord = {

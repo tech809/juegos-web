@@ -47,6 +47,18 @@ export async function GET(request: Request) {
     lastPlayedRes.rows.map((r) => [String(r.player_id), String(r.last_played)])
   );
 
+  // Partidas de los últimos 365 días (todas, también las amistosas): sirve para
+  // ofrecer primero a quien más juega cuando se elige a los jugadores de una partida.
+  const lastYearRes = await db.execute({
+    sql: `SELECT gp.player_id, COUNT(*) AS n
+          FROM game_players gp
+          JOIN games g ON g.id = gp.game_id AND g.game = ?
+          WHERE g.created_at >= datetime('now', '-365 days')
+          GROUP BY gp.player_id`,
+    args: [game],
+  });
+  const lastYearById = new Map(lastYearRes.rows.map((r) => [String(r.player_id), Number(r.n)]));
+
   // El histórico de temporadas anteriores a la app se suma a las cifras
   // del jugador, para que reflejen su trayectoria completa.
   const legacy = await db.execute({
@@ -72,6 +84,7 @@ export async function GET(request: Request) {
         games_played: Number(p.games_played) + (extra?.games_played ?? 0),
         wins: Number(p.wins) + (extra?.wins ?? 0),
         last_played: lastPlayedById.get(String(p.id)) ?? null,
+        games_last_year: lastYearById.get(String(p.id)) ?? 0,
       };
     })
     // primero quien ha jugado más recientemente; los que solo tienen

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { Player } from "@/lib/types";
 import { CheckIcon, ChevronDownIcon, CrownIcon, SearchIcon, ShieldIcon, SwordsIcon, XIcon } from "./icons";
 import Skeleton from "./Skeleton";
+import { sortByRecentActivity } from "@/lib/player-order";
 import GameMediaField from "./GameMediaField";
 import GameNotesField from "./GameNotesField";
 import { EMPTY_MEDIA, uploadVideo, type MediaValue } from "@/lib/media";
@@ -66,7 +67,7 @@ export default function NewGameModal({
       ? allPlayers
       : // los ya seleccionados se quedan siempre visibles, aunque no coincidan con la búsqueda
         allPlayers.filter((p) => selectedIds.includes(p.id) || p.name.toLowerCase().includes(term));
-    return [...base].sort((a, b) => a.name.localeCompare(b.name, "es"));
+    return sortByRecentActivity(base);
   }, [allPlayers, search, selectedIds]);
 
   const exactMatch = allPlayers.some((p) => p.name.toLowerCase() === search.trim().toLowerCase());

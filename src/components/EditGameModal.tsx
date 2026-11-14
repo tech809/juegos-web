@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { GameRecord, Player } from "@/lib/types";
 import { CrownIcon, PencilIcon, SearchIcon, ShieldIcon, SwordsIcon, XIcon } from "./icons";
 import Skeleton from "./Skeleton";
+import { sortByRecentActivity } from "@/lib/player-order";
 import GameMediaField from "./GameMediaField";
 import GameNotesField from "./GameNotesField";
 import { removeVideo, uploadVideo, type MediaValue } from "@/lib/media";
@@ -61,9 +62,11 @@ export default function EditGameModal({
 
   const visiblePlayers = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return allPlayers;
-    // los ya seleccionados se quedan siempre visibles, aunque no coincidan con la búsqueda
-    return allPlayers.filter((p) => selectedIds.includes(p.id) || p.name.toLowerCase().includes(term));
+    const base = !term
+      ? allPlayers
+      : // los ya seleccionados se quedan siempre visibles, aunque no coincidan con la búsqueda
+        allPlayers.filter((p) => selectedIds.includes(p.id) || p.name.toLowerCase().includes(term));
+    return sortByRecentActivity(base);
   }, [allPlayers, search, selectedIds]);
 
   function toggleSelect(player: Player) {
