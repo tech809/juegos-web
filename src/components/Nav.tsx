@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AllianceIcon, CardsIcon, CheckIcon, ChevronDownIcon, CrestIcon, GalleryIcon, TrophyIcon } from "./icons";
+import DogBarkButton from "./DogBarkButton";
 
 const LINK_ICON: Record<string, typeof AllianceIcon | undefined> = {
   Jugadores: AllianceIcon,
@@ -142,7 +143,7 @@ export default function Nav() {
           </AnimatePresence>
         </div>
 
-        <nav className="flex gap-1 sm:gap-2 overflow-x-auto">
+        <nav className="order-3 sm:order-2 w-full sm:w-auto flex gap-1 sm:gap-2 overflow-x-auto">
           {game.links.map((link) => {
             const active = pathname === link.href;
             const Icon = LINK_ICON[link.label];
@@ -165,6 +166,7 @@ export default function Nav() {
             );
           })}
         </nav>
+        <DogBarkButton />
       </div>
     </header>
   );
