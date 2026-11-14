@@ -23,6 +23,7 @@ export async function ensureSchema() {
     "ALTER TABLE game_players ADD COLUMN team INTEGER",
     "ALTER TABLE games ADD COLUMN counts_for_stats INTEGER NOT NULL DEFAULT 1",
     "ALTER TABLE players ADD COLUMN photo TEXT",
+    "ALTER TABLE game_players ADD COLUMN is_winner INTEGER NOT NULL DEFAULT 0",
   ];
   for (const migration of migrations) {
     try {
@@ -31,6 +32,12 @@ export async function ensureSchema() {
       // ya existe la columna
     }
   }
+
+  // Las partidas anteriores tenían un único ganador de Catán.
+  await db.execute(`UPDATE game_players SET is_winner = 1
+    WHERE is_winner = 0 AND player_id IN (
+      SELECT winner_id FROM games WHERE games.id = game_players.game_id AND game = 'catan'
+    )`);
 
   await migratePlayersPerGame();
 

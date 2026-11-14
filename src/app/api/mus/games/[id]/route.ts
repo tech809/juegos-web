@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, ensureSchema } from "@/lib/db";
+import { gameDateToTimestamp } from "@/lib/game-date";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export async function PATCH(
     winnerTeam?: unknown;
     image?: unknown;
     countsForStats?: unknown;
+    date?: unknown;
   };
   try {
     body = await request.json();
@@ -34,7 +36,7 @@ export async function PATCH(
   }
 
   const existing = await db.execute({
-    sql: "SELECT id, game, winner_team, image, counts_for_stats FROM games WHERE id = ?",
+    sql: "SELECT id, game, winner_team, image, counts_for_stats, created_at FROM games WHERE id = ?",
     args: [id],
   });
   if (existing.rows.length === 0) {
@@ -116,6 +118,8 @@ export async function PATCH(
       : body.countsForStats === false
         ? 0
         : 1;
+  const createdAt = body.date === undefined ? String(current.created_at) : gameDateToTimestamp(body.date);
+  if (!createdAt) return NextResponse.json({ error: "Fecha inválida o futura" }, { status: 400 });
 
   // winner_id se mantiene como jugador representativo de la pareja ganadora
   let winnerId: string;
@@ -139,8 +143,8 @@ export async function PATCH(
     await db.batch(
       [
         {
-          sql: "UPDATE games SET winner_id = ?, winner_team = ?, image = ?, counts_for_stats = ? WHERE id = ?",
-          args: [winnerId, winnerTeam, image, counts, id],
+          sql: "UPDATE games SET winner_id = ?, winner_team = ?, image = ?, counts_for_stats = ?, created_at = ? WHERE id = ?",
+          args: [winnerId, winnerTeam, image, counts, createdAt, id],
         },
         ...(teamA && teamB
           ? [

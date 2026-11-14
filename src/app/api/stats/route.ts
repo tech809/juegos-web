@@ -34,7 +34,7 @@ async function getRealYearStats(year: string) {
       SELECT
         p.id, p.name, p.color, p.photo,
         COUNT(g.id) AS games_played,
-        SUM(CASE WHEN g.winner_id = p.id THEN 1 ELSE 0 END) AS wins
+        SUM(CASE WHEN g.id IS NOT NULL AND gp.is_winner = 1 THEN 1 ELSE 0 END) AS wins
       FROM players p
       LEFT JOIN game_players gp ON gp.player_id = p.id
       LEFT JOIN games g ON g.id = gp.game_id AND g.game = 'catan' AND g.counts_for_stats = 1 AND strftime('%Y', g.created_at) = ?
@@ -47,7 +47,7 @@ async function getRealYearStats(year: string) {
   // partidas de ese año ordenadas por fecha para calcular rachas por jugador
   const recentGames = await db.execute({
     sql: `
-      SELECT g.id, g.winner_id, g.created_at, gp.player_id
+      SELECT g.id, g.created_at, gp.player_id, gp.is_winner
       FROM games g
       JOIN game_players gp ON gp.game_id = g.id
       WHERE g.game = 'catan' AND g.counts_for_stats = 1 AND strftime('%Y', g.created_at) = ?
@@ -64,7 +64,7 @@ async function getRealYearStats(year: string) {
 
   for (const row of recentGames.rows) {
     const playerId = String(row.player_id);
-    const won = row.winner_id === row.player_id;
+    const won = Number(row.is_winner) === 1;
     if (won) {
       currentStreak.set(playerId, (currentStreak.get(playerId) ?? 0) + 1);
       streaks.set(playerId, Math.max(streaks.get(playerId) ?? 0, currentStreak.get(playerId)!));
@@ -154,7 +154,7 @@ async function getHistoricoCompleto() {
     SELECT
       p.id,
       COUNT(g.id) AS games_played,
-      SUM(CASE WHEN g.winner_id = p.id THEN 1 ELSE 0 END) AS wins
+      SUM(CASE WHEN g.id IS NOT NULL AND gp.is_winner = 1 THEN 1 ELSE 0 END) AS wins
     FROM players p
     LEFT JOIN game_players gp ON gp.player_id = p.id
     LEFT JOIN games g ON g.id = gp.game_id AND g.game = 'catan' AND g.counts_for_stats = 1

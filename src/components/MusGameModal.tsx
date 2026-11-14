@@ -20,6 +20,7 @@ export default function MusGameModal({
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [winnerTeam, setWinnerTeam] = useState<0 | 1 | null>(null);
+  const [date, setDate] = useState(() => new Date().toLocaleDateString("sv-SE"));
   const [image, setImage] = useState<string | null>(null);
   const [editingSource, setEditingSource] = useState<File | string | null>(null);
   const [countsForStats, setCountsForStats] = useState(true);
@@ -131,6 +132,7 @@ export default function MusGameModal({
           teamA: teamA.map((p) => p.id),
           teamB: teamB.map((p) => p.id),
           winnerTeam,
+          date,
           image,
           countsForStats,
         }),
@@ -346,6 +348,12 @@ export default function MusGameModal({
               </motion.section>
             )}
           </AnimatePresence>
+
+          <label className="block mb-5 text-xs font-display font-semibold uppercase tracking-[0.15em] opacity-70">
+            Fecha de la partida
+            <input type="date" value={date} max={new Date().toLocaleDateString("sv-SE")} onChange={(e) => setDate(e.target.value)}
+              className="block mt-2 w-full px-3 py-2 rounded border-2 border-border bg-parchment-deep text-sm text-foreground" />
+          </label>
 
           {/* Foto */}
           <section className="mb-5">

@@ -37,11 +37,20 @@ CREATE TABLE IF NOT EXISTS game_players (
   game_id TEXT NOT NULL REFERENCES games(id) ON DELETE CASCADE,
   player_id TEXT NOT NULL REFERENCES players(id),
   team INTEGER,
+  is_winner INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (game_id, player_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_game_players_player ON game_players(player_id);
 CREATE INDEX IF NOT EXISTS idx_games_created_at ON games(created_at);
+
+CREATE TABLE IF NOT EXISTS game_comments (
+  id TEXT PRIMARY KEY,
+  game_id TEXT NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_game_comments_game ON game_comments(game_id, created_at);
 
 -- Temporadas anteriores a la app: solo tenemos el resumen (partidas
 -- jugadas / ganadas) por jugador y año, no el detalle de cada partida.

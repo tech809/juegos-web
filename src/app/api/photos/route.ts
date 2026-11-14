@@ -50,13 +50,13 @@ export async function GET(request: Request) {
   });
 
   const ids = gamesRes.rows.map((g) => String(g.id));
-  const rosters = new Map<string, { player: GamePhotoPlayer; team: number | null }[]>();
+  const rosters = new Map<string, { player: GamePhotoPlayer; team: number | null; isWinner: boolean }[]>();
 
   if (ids.length > 0) {
     const placeholders = ids.map(() => "?").join(",");
     const playersRes = await db.execute({
       sql: `
-        SELECT gp.game_id, gp.team, pl.id, pl.name, pl.color
+        SELECT gp.game_id, gp.team, gp.is_winner, pl.id, pl.name, pl.color
         FROM game_players gp
         JOIN players pl ON pl.id = gp.player_id
         WHERE gp.game_id IN (${placeholders})
@@ -70,6 +70,7 @@ export async function GET(request: Request) {
       rosters.get(key)!.push({
         player: { id: String(row.id), name: String(row.name), color: String(row.color) },
         team: row.team === null || row.team === undefined ? null : Number(row.team),
+        isWinner: Number(row.is_winner) === 1,
       });
     }
   }
@@ -85,15 +86,8 @@ export async function GET(request: Request) {
       winners = roster.filter((r) => r.team === winnerTeam).map((r) => r.player);
       rivals = roster.filter((r) => r.team !== winnerTeam).map((r) => r.player);
     } else {
-      const winnerId = String(g.winner_id);
-      winners = [
-        {
-          id: winnerId,
-          name: String(g.winner_name),
-          color: String(g.winner_color),
-        },
-      ];
-      rivals = roster.filter((r) => r.player.id !== winnerId).map((r) => r.player);
+      winners = roster.filter((r) => r.isWinner).map((r) => r.player);
+      rivals = roster.filter((r) => !r.isWinner).map((r) => r.player);
     }
 
     return {

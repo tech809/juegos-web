@@ -24,7 +24,8 @@ export default function EditGameModal({
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>(() => game.players.map((p) => p.id));
-  const [winnerId, setWinnerId] = useState<string | null>(game.winner_id);
+  const [winnerIds, setWinnerIds] = useState<string[]>(() => game.winners.map((p) => p.id));
+  const [date, setDate] = useState(game.created_at.slice(0, 10));
   const [image, setImage] = useState<string | null>(game.image ?? null);
   const [processingImage, setProcessingImage] = useState(false);
   const [countsForStats, setCountsForStats] = useState(game.counts_for_stats);
@@ -63,9 +64,9 @@ export default function EditGameModal({
   function toggleSelect(player: Player) {
     setError(null);
     setSelectedIds((prev) =>
-      prev.includes(player.id) ? prev.filter((x) => x !== player.id) : [...prev, player.id]
+      prev.includes(player.id) ? prev.filter((x) => x !== player.id) : prev.length < 20 ? [...prev, player.id] : prev
     );
-    if (winnerId === player.id) setWinnerId(null);
+    setWinnerIds((prev) => prev.filter((id) => id !== player.id));
   }
 
   async function handleFile(file: File | undefined) {
@@ -85,7 +86,7 @@ export default function EditGameModal({
       setError("Selecciona al menos 2 jugadores");
       return;
     }
-    if (!winnerId) {
+    if (winnerIds.length === 0) {
       setError("Marca quién ha ganado");
       return;
     }
@@ -95,7 +96,7 @@ export default function EditGameModal({
       const res = await fetch(`/api/games/${game.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerIds: selectedIds, winnerId, image, countsForStats }),
+        body: JSON.stringify({ playerIds: selectedIds, winnerIds, date, image, countsForStats }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -110,7 +111,7 @@ export default function EditGameModal({
     }
   }
 
-  const ready = selectedIds.length >= 2 && Boolean(winnerId);
+  const ready = selectedIds.length >= 2 && winnerIds.length > 0 && Boolean(date);
 
   return (
     <AnimatePresence>
@@ -142,7 +143,7 @@ export default function EditGameModal({
           {/* Jugadores */}
           <section className="mb-5">
             <h3 className="text-xs font-display font-semibold uppercase tracking-[0.15em] mb-2 opacity-70">
-              Quiénes jugaron
+              Quiénes jugaron ({selectedIds.length}/20)
             </h3>
             <div className="relative mb-2">
               <SearchIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
@@ -169,6 +170,7 @@ export default function EditGameModal({
                       key={p.id}
                       type="button"
                       onClick={() => toggleSelect(p)}
+                      disabled={!active && selectedIds.length >= 20}
                       className={`px-3 py-1.5 rounded text-sm font-display font-semibold border-2 transition-all flex items-center gap-1.5 ${
                         active ? "text-[#f6e9c8] shadow-md scale-105" : "bg-parchment-deep text-foreground/70 border-border hover:border-gold"
                       }`}
@@ -197,12 +199,13 @@ export default function EditGameModal({
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedPlayers.map((p) => {
-                    const isWinner = winnerId === p.id;
+                    const isWinner = winnerIds.includes(p.id);
                     return (
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => setWinnerId(p.id)}
+                        onClick={() => setWinnerIds((prev) => prev.includes(p.id) ? prev.filter((id) => id !== p.id) : prev.length < 2 ? [...prev, p.id] : prev)}
+                        aria-pressed={isWinner}
                         className={`px-3 py-1.5 rounded text-sm font-display font-bold border-2 flex items-center gap-1.5 transition-all ${
                           isWinner
                             ? "bg-gold-bright border-gold-bright text-wine scale-105 shadow-lg"
@@ -218,6 +221,12 @@ export default function EditGameModal({
               </motion.section>
             )}
           </AnimatePresence>
+
+          <label className="block mb-5 text-xs font-display font-semibold uppercase tracking-[0.15em] opacity-70">
+            Fecha de la partida
+            <input type="date" value={date} max={new Date().toLocaleDateString("sv-SE")} onChange={(e) => setDate(e.target.value)}
+              className="block mt-2 w-full px-3 py-2 rounded border-2 border-border bg-parchment-deep text-sm text-foreground" />
+          </label>
 
           {/* Foto */}
           <section className="mb-5">

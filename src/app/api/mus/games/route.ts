@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, ensureSchema } from "@/lib/db";
+import { gameDateToTimestamp } from "@/lib/game-date";
 import type { MusGameRecord, MusTeam } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +60,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   await ensureSchema();
-  const { teamA, teamB, winnerTeam, image, countsForStats } = await request.json();
+  const { teamA, teamB, winnerTeam, date, image, countsForStats } = await request.json();
+  const createdAt = gameDateToTimestamp(date);
+  if (!createdAt) return NextResponse.json({ error: "Fecha inválida o futura" }, { status: 400 });
 
   if (!Array.isArray(teamA) || teamA.length !== 2 || !Array.isArray(teamB) || teamB.length !== 2) {
     return NextResponse.json(
@@ -77,6 +80,11 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+  const known = await db.execute({
+    sql: "SELECT id FROM players WHERE game = 'mus' AND id IN (?, ?, ?, ?)",
+    args: allIds,
+  });
+  if (known.rows.length !== 4) return NextResponse.json({ error: "Algún jugador no existe o no es de Mus" }, { status: 400 });
   if (winnerTeam !== 0 && winnerTeam !== 1) {
     return NextResponse.json({ error: "Debes indicar la pareja ganadora" }, { status: 400 });
   }
@@ -92,8 +100,8 @@ export async function POST(request: Request) {
     await db.batch(
       [
         {
-          sql: "INSERT INTO games (id, game, winner_id, winner_team, image, counts_for_stats) VALUES (?, 'mus', ?, ?, ?, ?)",
-          args: [id, winnerId, winnerTeam, typeof image === "string" ? image : null, counts],
+          sql: "INSERT INTO games (id, game, winner_id, winner_team, image, counts_for_stats, created_at) VALUES (?, 'mus', ?, ?, ?, ?, ?)",
+          args: [id, winnerId, winnerTeam, typeof image === "string" ? image : null, counts, createdAt],
         },
         ...teamA.map((playerId: string) => ({
           sql: "INSERT INTO game_players (game_id, player_id, team) VALUES (?, ?, 0)",

@@ -30,6 +30,7 @@ export default function EditMusGameModal({
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>(() => initialPlayers.map((p) => p.id));
   const [winnerTeam, setWinnerTeam] = useState<0 | 1 | null>(game.winner_team);
+  const [date, setDate] = useState(game.created_at.slice(0, 10));
   const [image, setImage] = useState<string | null>(game.image ?? null);
   const [processingImage, setProcessingImage] = useState(false);
   const [countsForStats, setCountsForStats] = useState(game.counts_for_stats);
@@ -111,6 +112,7 @@ export default function EditMusGameModal({
           teamA: teamA.map((p) => p.id),
           teamB: teamB.map((p) => p.id),
           winnerTeam,
+          date,
           image,
           countsForStats,
         }),
@@ -258,6 +260,12 @@ export default function EditMusGameModal({
               </motion.section>
             )}
           </AnimatePresence>
+
+          <label className="block mb-5 text-xs font-display font-semibold uppercase tracking-[0.15em] opacity-70">
+            Fecha de la partida
+            <input type="date" value={date} max={new Date().toLocaleDateString("sv-SE")} onChange={(e) => setDate(e.target.value)}
+              className="block mt-2 w-full px-3 py-2 rounded border-2 border-border bg-parchment-deep text-sm text-foreground" />
+          </label>
 
           {/* Foto */}
           <section className="mb-5">

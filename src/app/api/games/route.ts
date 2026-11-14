@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, ensureSchema } from "@/lib/db";
+import { gameDateToTimestamp } from "@/lib/game-date";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export async function GET() {
   `);
 
   const playersByGame = await db.execute(`
-    SELECT gp.game_id, pl.id, pl.name, pl.color
+    SELECT gp.game_id, gp.is_winner, pl.id, pl.name, pl.color
     FROM game_players gp
     JOIN players pl ON pl.id = gp.player_id
     JOIN games g2 ON g2.id = gp.game_id AND g2.game = 'catan'
@@ -25,13 +26,14 @@ export async function GET() {
   for (const row of playersByGame.rows) {
     const key = row.game_id;
     if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key).push({ id: row.id, name: row.name, color: row.color });
+    grouped.get(key).push({ id: row.id, name: row.name, color: row.color, is_winner: Number(row.is_winner) === 1 });
   }
 
   const enriched = games.rows.map((g) => ({
     ...g,
     counts_for_stats: Number(g.counts_for_stats) === 1,
     players: grouped.get(g.id) ?? [],
+    winners: (grouped.get(g.id) ?? []).filter((p: { is_winner: boolean }) => p.is_winner),
   }));
 
   return NextResponse.json(enriched);
@@ -39,21 +41,30 @@ export async function GET() {
 
 export async function POST(request: Request) {
   await ensureSchema();
-  const { playerIds: rawPlayerIds, winnerId, image, countsForStats } = await request.json();
+  const { playerIds: rawPlayerIds, winnerIds: rawWinnerIds, winnerId, date, image, countsForStats } = await request.json();
 
-  if (!Array.isArray(rawPlayerIds) || rawPlayerIds.length < 2) {
+  if (!Array.isArray(rawPlayerIds) || rawPlayerIds.length < 2 || rawPlayerIds.some((id) => typeof id !== "string" || !id)) {
     return NextResponse.json({ error: "Se necesitan al menos 2 jugadores" }, { status: 400 });
   }
   const playerIds = Array.from(new Set(rawPlayerIds));
   if (playerIds.length < 2) {
     return NextResponse.json({ error: "Se necesitan al menos 2 jugadores distintos" }, { status: 400 });
   }
-  if (playerIds.length > 6) {
-    return NextResponse.json({ error: "Máximo 6 jugadores por partida" }, { status: 400 });
+  if (playerIds.length > 20) {
+    return NextResponse.json({ error: "Máximo 20 jugadores por partida" }, { status: 400 });
   }
-  if (!winnerId || !playerIds.includes(winnerId)) {
-    return NextResponse.json({ error: "El ganador debe estar entre los jugadores" }, { status: 400 });
+  const known = await db.execute({
+    sql: `SELECT id FROM players WHERE game = 'catan' AND id IN (${playerIds.map(() => "?").join(",")})`,
+    args: playerIds as string[],
+  });
+  if (known.rows.length !== playerIds.length) return NextResponse.json({ error: "Algún jugador no existe o no es de Catán" }, { status: 400 });
+  const winnerIds = rawWinnerIds ?? (winnerId ? [winnerId] : []);
+  if (!Array.isArray(winnerIds) || winnerIds.length < 1 || winnerIds.length > 2 ||
+      winnerIds.some((id) => typeof id !== "string" || !playerIds.includes(id)) || new Set(winnerIds).size !== winnerIds.length) {
+    return NextResponse.json({ error: "Elige uno o dos ganadores entre los jugadores" }, { status: 400 });
   }
+  const createdAt = gameDateToTimestamp(date);
+  if (!createdAt) return NextResponse.json({ error: "Fecha inválida o futura" }, { status: 400 });
   if (typeof image === "string" && image.length > 2_000_000) {
     return NextResponse.json({ error: "La imagen es demasiado grande" }, { status: 400 });
   }
@@ -64,12 +75,12 @@ export async function POST(request: Request) {
     await db.batch(
       [
         {
-          sql: "INSERT INTO games (id, game, winner_id, image, counts_for_stats) VALUES (?, 'catan', ?, ?, ?)",
-          args: [id, winnerId, typeof image === "string" ? image : null, counts],
+          sql: "INSERT INTO games (id, game, winner_id, image, counts_for_stats, created_at) VALUES (?, 'catan', ?, ?, ?, ?)",
+          args: [id, winnerIds[0], typeof image === "string" ? image : null, counts, createdAt],
         },
         ...playerIds.map((playerId) => ({
-          sql: "INSERT INTO game_players (game_id, player_id) VALUES (?, ?)",
-          args: [id, playerId as string],
+          sql: "INSERT INTO game_players (game_id, player_id, is_winner) VALUES (?, ?, ?)",
+          args: [id, playerId as string, winnerIds.includes(playerId) ? 1 : 0],
         })),
       ],
       "write"

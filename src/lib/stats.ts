@@ -13,7 +13,7 @@ import type { StatPlayerRef } from "@/lib/types";
  *  - nunca se selecciona `games.image` (son fotos en base64, pesan muchísimo).
  */
 
-export type CountedParticipant = { playerId: string; team: number | null };
+export type CountedParticipant = { playerId: string; team: number | null; isWinner: boolean };
 
 export type CountedGame = {
   id: string;
@@ -63,7 +63,7 @@ export async function loadCountedGames(game: GameId, year?: string): Promise<Cou
   const res = year
     ? await db.execute({
         sql: `
-          SELECT g.id, g.winner_id, g.winner_team, g.created_at, gp.player_id, gp.team
+          SELECT g.id, g.winner_id, g.winner_team, g.created_at, gp.player_id, gp.team, gp.is_winner
           FROM games g
           JOIN game_players gp ON gp.game_id = g.id
           WHERE g.game = ? AND g.counts_for_stats = 1 AND strftime('%Y', g.created_at) = ?
@@ -73,7 +73,7 @@ export async function loadCountedGames(game: GameId, year?: string): Promise<Cou
       })
     : await db.execute({
         sql: `
-          SELECT g.id, g.winner_id, g.winner_team, g.created_at, gp.player_id, gp.team
+          SELECT g.id, g.winner_id, g.winner_team, g.created_at, gp.player_id, gp.team, gp.is_winner
           FROM games g
           JOIN game_players gp ON gp.game_id = g.id
           WHERE g.game = ? AND g.counts_for_stats = 1
@@ -104,6 +104,7 @@ export async function loadCountedGames(game: GameId, year?: string): Promise<Cou
     }
     entry.participants.push({
       playerId: String(row.player_id),
+      isWinner: Number(row.is_winner) === 1,
       team: row.team === null || row.team === undefined ? null : Number(row.team),
     });
   }
@@ -116,7 +117,7 @@ export function didWin(game: GameId, g: CountedGame, p: CountedParticipant): boo
   if (game === "mus") {
     return p.team !== null && g.winnerTeam !== null && p.team === g.winnerTeam;
   }
-  return g.winnerId === p.playerId;
+  return p.isWinner;
 }
 
 /** Partidas, victorias, mejor racha y racha viva de cada jugador. */
@@ -177,8 +178,10 @@ export function aggregateRivals(game: GameId, games: CountedGame[]): RivalAgg[] 
           map.set(key, rec);
         }
         rec.together += 1;
-        if (didWin(game, g, a)) rec.aWins += 1;
-        else if (didWin(game, g, b)) rec.bWins += 1;
+        const aWon = didWin(game, g, a);
+        const bWon = didWin(game, g, b);
+        if (aWon && !bWon) rec.aWins += 1;
+        else if (bWon && !aWon) rec.bWins += 1;
       }
     }
   }

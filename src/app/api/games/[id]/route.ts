@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, ensureSchema } from "@/lib/db";
+import { gameDateToTimestamp } from "@/lib/game-date";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,8 @@ export async function PATCH(
   let body: {
     playerIds?: unknown;
     winnerId?: unknown;
+    winnerIds?: unknown;
+    date?: unknown;
     image?: unknown;
     countsForStats?: unknown;
   };
@@ -49,7 +52,7 @@ export async function PATCH(
   }
 
   const existing = await db.execute({
-    sql: "SELECT id, game, winner_id, image, counts_for_stats FROM games WHERE id = ?",
+    sql: "SELECT id, game, winner_id, image, counts_for_stats, created_at FROM games WHERE id = ?",
     args: [id],
   });
   if (existing.rows.length === 0) {
@@ -76,6 +79,7 @@ export async function PATCH(
         { status: 400 }
       );
     }
+    if (playerIds.length > 20) return NextResponse.json({ error: "Máximo 20 jugadores" }, { status: 400 });
   }
 
   const currentPlayersRes = await db.execute({
@@ -105,14 +109,22 @@ export async function PATCH(
     );
   }
 
-  const winnerId =
-    body.winnerId === undefined ? String(current.winner_id) : body.winnerId;
-  if (typeof winnerId !== "string" || !effectivePlayerIds.includes(winnerId)) {
+  const currentWinners = await db.execute({ sql: "SELECT player_id FROM game_players WHERE game_id = ? AND is_winner = 1", args: [id] });
+  const winnerIds = body.winnerIds === undefined
+    ? body.winnerId === undefined
+      ? currentWinners.rows.map((r) => String(r.player_id))
+      : [body.winnerId]
+    : body.winnerIds;
+  if (!Array.isArray(winnerIds) || winnerIds.length < 1 || winnerIds.length > 2 ||
+      winnerIds.some((winnerId) => typeof winnerId !== "string" || !effectivePlayerIds.includes(winnerId)) ||
+      new Set(winnerIds).size !== winnerIds.length) {
     return NextResponse.json(
-      { error: "El ganador debe estar entre los jugadores" },
+      { error: "Elige uno o dos ganadores entre los jugadores" },
       { status: 400 }
     );
   }
+  const createdAt = body.date === undefined ? String(current.created_at) : gameDateToTimestamp(body.date);
+  if (!createdAt) return NextResponse.json({ error: "Fecha inválida o futura" }, { status: 400 });
 
   let image: string | null;
   if (body.image === undefined) {
@@ -139,18 +151,18 @@ export async function PATCH(
     await db.batch(
       [
         {
-          sql: "UPDATE games SET winner_id = ?, image = ?, counts_for_stats = ? WHERE id = ?",
-          args: [winnerId, image, counts, id],
+          sql: "UPDATE games SET winner_id = ?, image = ?, counts_for_stats = ?, created_at = ? WHERE id = ?",
+          args: [winnerIds[0], image, counts, createdAt, id],
         },
         ...(playerIds
           ? [
               { sql: "DELETE FROM game_players WHERE game_id = ?", args: [id] },
               ...playerIds.map((playerId) => ({
-                sql: "INSERT INTO game_players (game_id, player_id) VALUES (?, ?)",
-                args: [id, playerId],
+                sql: "INSERT INTO game_players (game_id, player_id, is_winner) VALUES (?, ?, ?)",
+                args: [id, playerId, winnerIds.includes(playerId) ? 1 : 0],
               })),
             ]
-          : []),
+          : [{ sql: "UPDATE game_players SET is_winner = CASE WHEN player_id IN (?, ?) THEN 1 ELSE 0 END WHERE game_id = ?", args: [winnerIds[0], winnerIds[1] ?? winnerIds[0], id] }]),
       ],
       "write"
     );

@@ -15,7 +15,8 @@ export type GameRecord = {
   image?: string | null;
   counts_for_stats: boolean;
   created_at: string;
-  players: { id: string; name: string; color: string }[];
+  players: { id: string; name: string; color: string; is_winner: boolean }[];
+  winners: { id: string; name: string; color: string }[];
 };
 
 export type LeaderboardEntry = Player & {
@@ -190,6 +191,6 @@ export type PlayerProfile = {
     image?: string | null;
     counts_for_stats: boolean;
     created_at: string;
-    players: { id: string; name: string; color: string; team?: number | null }[];
+    players: { id: string; name: string; color: string; team?: number | null; is_winner?: boolean }[];
   }[];
 };

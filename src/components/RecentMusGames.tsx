@@ -7,6 +7,7 @@ import Skeleton from "./Skeleton";
 import EditMusGameModal from "./EditMusGameModal";
 import PhotoLightbox from "./PhotoLightbox";
 import ShareGameButton from "./ShareGameButton";
+import GameComments from "./GameComments";
 
 const PAGE_SIZE = 6;
 
@@ -15,8 +16,7 @@ function formatDate(iso: string) {
   return date.toLocaleDateString("es-ES", {
     day: "numeric",
     month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
+    year: "numeric",
   });
 }
 
@@ -149,10 +149,11 @@ export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) 
             return (
               <li
                 key={g.id}
-                className={`relative rounded-sm overflow-hidden border-2 border-border transition-opacity ${
+                className={`rounded-sm overflow-hidden border-2 border-border transition-opacity ${
                   removingId === g.id ? "opacity-40" : ""
                 }`}
               >
+                <div className="relative">
                 <button
                   type="button"
                   onClick={() => setViewingId(g.id)}
@@ -232,6 +233,8 @@ export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) 
                   </div>
                   <p className="text-[11px] text-[#f2e4bd]/60 italic mt-1">{formatDate(g.created_at)}</p>
                 </div>
+                </div>
+                <GameComments gameId={g.id} />
               </li>
             );
           }
@@ -239,7 +242,7 @@ export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) 
           return (
             <li
               key={g.id}
-              className={`bg-card border-2 border-border rounded-sm px-4 py-3 flex items-center justify-between gap-3 transition-opacity ${
+              className={`bg-card border-2 border-border rounded-sm px-4 py-3 flex flex-wrap items-center justify-between gap-3 transition-opacity ${
                 removingId === g.id ? "opacity-40" : ""
               }`}
             >
@@ -283,7 +286,7 @@ export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) 
                 )}
                 {!confirming && (
                   <>
-                    <span className="text-xs opacity-50 whitespace-nowrap italic hidden sm:inline mr-1">
+                    <span className="text-xs opacity-50 whitespace-nowrap italic mr-1">
                       {formatDate(g.created_at)}
                     </span>
                     {editControl}
@@ -291,6 +294,7 @@ export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) 
                 )}
                 {deleteControl}
               </div>
+              <GameComments gameId={g.id} />
             </li>
           );
         })}

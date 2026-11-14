@@ -31,7 +31,7 @@ export async function GET(
 
   const gamesRes = await db.execute({
     sql: `
-      SELECT g.id, g.winner_id, g.winner_team, g.image, g.counts_for_stats, g.created_at, gp.team AS my_team
+      SELECT g.id, g.winner_id, g.winner_team, g.image, g.counts_for_stats, g.created_at, gp.team AS my_team, gp.is_winner AS my_win
       FROM games g
       JOIN game_players gp ON gp.game_id = g.id
       WHERE gp.player_id = ? AND g.game = ?
@@ -45,13 +45,13 @@ export async function GET(
   const countingRows = gamesRes.rows.filter((g) => Number(g.counts_for_stats) === 1);
 
   const gameIds = gamesRes.rows.map((g) => String(g.id));
-  const byGame = new Map<string, { id: string; name: string; color: string; team: number | null }[]>();
+  const byGame = new Map<string, { id: string; name: string; color: string; team: number | null; is_winner: boolean }[]>();
 
   if (gameIds.length > 0) {
     const placeholders = gameIds.map(() => "?").join(",");
     const partRes = await db.execute({
       sql: `
-        SELECT gp.game_id, gp.team, pl.id, pl.name, pl.color
+        SELECT gp.game_id, gp.team, gp.is_winner, pl.id, pl.name, pl.color
         FROM game_players gp
         JOIN players pl ON pl.id = gp.player_id
         WHERE gp.game_id IN (${placeholders})
@@ -66,6 +66,7 @@ export async function GET(
         name: String(row.name),
         color: String(row.color),
         team: row.team === null || row.team === undefined ? null : Number(row.team),
+        is_winner: Number(row.is_winner) === 1,
       });
     }
   }
@@ -74,7 +75,7 @@ export async function GET(
   const didWin = (g: Row) =>
     game === "mus"
       ? Number(g.my_team) === Number(g.winner_team)
-      : String(g.winner_id) === id;
+      : Number(g.my_win) === 1;
 
   let gamesPlayed = countingRows.length;
   let wins = countingRows.filter((g) => didWin(g as Row)).length;
@@ -126,8 +127,8 @@ export async function GET(
       }
       const r = rivalries.get(other.id)!;
       r.together += 1;
-      if (iWon) r.myWins += 1;
-      else r.theirWins += 1;
+      if (iWon && !other.is_winner) r.myWins += 1;
+      else if (!iWon && other.is_winner) r.theirWins += 1;
     }
   }
 
@@ -268,7 +269,7 @@ export async function DELETE(
       sql: "SELECT COUNT(*) AS c FROM game_players WHERE player_id = ?",
       args: [id],
     }),
-    db.execute({ sql: "SELECT COUNT(*) AS c FROM games WHERE winner_id = ?", args: [id] }),
+    db.execute({ sql: "SELECT COUNT(*) AS c FROM game_players WHERE player_id = ? AND is_winner = 1", args: [id] }),
     db.execute({ sql: "SELECT COUNT(*) AS c FROM legacy_stats WHERE player_id = ?", args: [id] }),
   ]);
 

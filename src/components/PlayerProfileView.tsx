@@ -158,11 +158,11 @@ export default function PlayerProfileView({ game }: { game: GameId }) {
               const won =
                 isMus && g.winner_team !== null && g.winner_team !== undefined
                   ? myTeam === g.winner_team
-                  : g.winner_id === player.id;
-              const isWinnerPlayer = (p: { id: string; team?: number | null }) =>
+                  : g.players.some((p) => p.id === player.id && p.is_winner);
+              const isWinnerPlayer = (p: { id: string; team?: number | null; is_winner?: boolean }) =>
                 isMus && g.winner_team !== null && g.winner_team !== undefined
                   ? p.team === g.winner_team
-                  : p.id === g.winner_id;
+                  : Boolean(p.is_winner);
               return (
                 <li
                   key={g.id}

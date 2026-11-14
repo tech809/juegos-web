@@ -162,7 +162,11 @@ export async function GET(request: Request) {
         const names = teamRes.rows.map((r) => String(r.name));
         winner = names.length > 0 ? names.join(" y ") : null;
       } else {
-        winner = players.get(String(photoRow.winner_id))?.name ?? null;
+        const winnersRes = await db.execute({
+          sql: "SELECT p.name FROM game_players gp JOIN players p ON p.id = gp.player_id WHERE gp.game_id = ? AND gp.is_winner = 1",
+          args: [String(photoRow.id)],
+        });
+        winner = winnersRes.rows.map((r) => String(r.name)).join(" y ") || null;
       }
       photo = {
         id: String(photoRow.id),
@@ -216,9 +220,8 @@ export async function GET(request: Request) {
   });
   sortEntries(entries);
 
-  // En catán cada partida tiene exactamente un ganador, así que la suma de
-  // victorias del año ES el número de partidas. En juegos por parejas no
-  // vale esa cuenta, así que no se inventa un total.
+  // El histórico importado solo contiene totales por jugador; con parejas
+  // no se puede deducir el número exacto de partidas.
   const totalGames =
     game === "catan" ? entries.reduce((acc, e) => acc + e.wins, 0) : null;
 

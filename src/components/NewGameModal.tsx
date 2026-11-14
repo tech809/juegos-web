@@ -8,7 +8,7 @@ import Skeleton from "./Skeleton";
 import ImageEditModal from "./ImageEditModal";
 import PlayerAvatar from "./PlayerAvatar";
 
-const MAX_PLAYERS = 6;
+const MAX_PLAYERS = 20;
 
 export default function NewGameModal({
   onClose,
@@ -21,7 +21,8 @@ export default function NewGameModal({
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [winnerId, setWinnerId] = useState<string | null>(null);
+  const [winnerIds, setWinnerIds] = useState<string[]>([]);
+  const [date, setDate] = useState(() => new Date().toLocaleDateString("sv-SE"));
   const [image, setImage] = useState<string | null>(null);
   const [editingSource, setEditingSource] = useState<File | string | null>(null);
   const [countsForStats, setCountsForStats] = useState(true);
@@ -77,7 +78,7 @@ export default function NewGameModal({
       if (prev.length >= MAX_PLAYERS) return prev;
       return [...prev, player.id];
     });
-    if (winnerId === player.id) setWinnerId(null);
+    setWinnerIds((prev) => prev.filter((id) => id !== player.id));
   }
 
   async function createAndSelect(name: string) {
@@ -120,7 +121,7 @@ export default function NewGameModal({
       setError(`Máximo ${MAX_PLAYERS} jugadores`);
       return;
     }
-    if (!winnerId) {
+    if (winnerIds.length === 0) {
       setError("Marca quién ha ganado");
       return;
     }
@@ -130,15 +131,14 @@ export default function NewGameModal({
       const res = await fetch("/api/games", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerIds: selectedIds, winnerId, image, countsForStats }),
+        body: JSON.stringify({ playerIds: selectedIds, winnerIds, date, image, countsForStats }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setError(data.error ?? "No se pudo guardar la partida");
         return;
       }
-      const winner = allPlayers.find((p) => p.id === winnerId);
-      onSaved(winner?.name ?? "¡Victoria!");
+      onSaved(winnerIds.map((id) => allPlayers.find((p) => p.id === id)?.name).filter(Boolean).join(" y ") || "¡Victoria!");
     } catch {
       setError("No se pudo guardar la partida. Comprueba tu conexión.");
     } finally {
@@ -146,7 +146,7 @@ export default function NewGameModal({
     }
   }
 
-  const ready = selectedIds.length >= 2 && Boolean(winnerId);
+  const ready = selectedIds.length >= 2 && winnerIds.length > 0 && Boolean(date);
 
   return (
     <>
@@ -299,12 +299,13 @@ export default function NewGameModal({
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedPlayers.map((p) => {
-                    const isWinner = winnerId === p.id;
+                    const isWinner = winnerIds.includes(p.id);
                     return (
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => setWinnerId(p.id)}
+                        onClick={() => setWinnerIds((prev) => prev.includes(p.id) ? prev.filter((id) => id !== p.id) : prev.length < 2 ? [...prev, p.id] : prev)}
+                        aria-pressed={isWinner}
                         className={`px-3 py-1.5 rounded text-sm font-display font-bold border-2 flex items-center gap-1.5 transition-all ${
                           isWinner
                             ? "bg-gold-bright border-gold-bright text-wine scale-105 shadow-lg"
@@ -320,6 +321,12 @@ export default function NewGameModal({
               </motion.section>
             )}
           </AnimatePresence>
+
+          <label className="block mb-5 text-xs font-display font-semibold uppercase tracking-[0.15em] opacity-70">
+            Fecha de la partida
+            <input type="date" value={date} max={new Date().toLocaleDateString("sv-SE")} onChange={(e) => setDate(e.target.value)}
+              className="block mt-2 w-full px-3 py-2 rounded border-2 border-border bg-parchment-deep text-sm text-foreground" />
+          </label>
 
           {/* Foto */}
           <section className="mb-5">

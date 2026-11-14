@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   // En mus se gana por equipo (tu equipo es el ganador); en catán,
   // ganas si eres el winner_id de la partida.
   const winCondition =
-    game === "mus" ? "gp.team = g.winner_team" : "g.winner_id = p.id";
+    game === "mus" ? "gp.team = g.winner_team" : "gp.is_winner = 1";
 
   const result = await db.execute({
     sql: `

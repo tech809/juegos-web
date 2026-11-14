@@ -8,6 +8,7 @@ import Skeleton from "./Skeleton";
 import EditGameModal from "./EditGameModal";
 import PhotoLightbox from "./PhotoLightbox";
 import ShareGameButton from "./ShareGameButton";
+import GameComments from "./GameComments";
 
 const PAGE_SIZE = 6;
 
@@ -16,8 +17,7 @@ function formatDate(iso: string) {
   return date.toLocaleDateString("es-ES", {
     day: "numeric",
     month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
+    year: "numeric",
   });
 }
 
@@ -100,7 +100,8 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
       <ul className="space-y-4">
         {visible.map((g) => {
           const confirming = confirmingId === g.id;
-          const others = g.players.filter((p) => p.id !== g.winner_id);
+          const others = g.players.filter((p) => !p.is_winner);
+          const winnerNames = g.winners.map((p) => p.name).join(" y ");
           const deleteControl = confirming ? (
             <div className="flex items-center gap-2">
               <span className="text-[11px] italic opacity-80 hidden sm:inline">¿Seguro?</span>
@@ -148,10 +149,11 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
             return (
               <li
                 key={g.id}
-                className={`relative rounded-sm overflow-hidden border-2 border-border transition-opacity ${
+                className={`rounded-sm overflow-hidden border-2 border-border transition-opacity ${
                   removingId === g.id ? "opacity-40" : ""
                 }`}
               >
+                <div className="relative">
                 <button
                   type="button"
                   onClick={() => setViewingId(g.id)}
@@ -172,7 +174,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
                     <ShareGameButton
                       game="catan"
                       variant="overlay"
-                      winners={[{ name: g.winner_name, color: g.winner_color }]}
+                      winners={g.winners}
                       rivals={others}
                       createdAt={g.created_at}
                       image={g.image}
@@ -215,7 +217,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
                     <div className="min-w-0">
                       <p className="font-display font-bold text-lg text-[#f6e9c8] truncate flex items-center gap-1.5 drop-shadow">
                         <CrownIcon className="w-4 h-4 text-gold-bright shrink-0" />
-                        {g.winner_name}
+                        {winnerNames}
                       </p>
                       {others.length > 0 && (
                         <p className="text-xs text-[#f2e4bd]/80 truncate">
@@ -226,6 +228,8 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
                   </Link>
                   <p className="text-[11px] text-[#f2e4bd]/60 italic mt-1">{formatDate(g.created_at)}</p>
                 </div>
+                </div>
+                <GameComments gameId={g.id} />
               </li>
             );
           }
@@ -233,7 +237,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
           return (
             <li
               key={g.id}
-              className={`bg-card border-2 border-border rounded-sm px-4 py-3 flex items-center justify-between gap-3 transition-opacity ${
+              className={`bg-card border-2 border-border rounded-sm px-4 py-3 flex flex-wrap items-center justify-between gap-3 transition-opacity ${
                 removingId === g.id ? "opacity-40" : ""
               }`}
             >
@@ -247,7 +251,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
                 <div className="min-w-0">
                   <p className="font-display font-bold text-base truncate flex items-center gap-1.5">
                     <CrownIcon className="w-3.5 h-3.5 text-gold shrink-0" />
-                    {g.winner_name}
+                    {winnerNames}
                     {!g.counts_for_stats && (
                       <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-gold/40 text-gold opacity-80">
                         No cuenta
@@ -264,7 +268,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
                   <ShareGameButton
                     game="catan"
                     variant="icon"
-                    winners={[{ name: g.winner_name, color: g.winner_color }]}
+                    winners={g.winners}
                     rivals={others}
                     createdAt={g.created_at}
                     countsForStats={g.counts_for_stats}
@@ -272,7 +276,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
                 )}
                 {!confirming && (
                   <>
-                    <span className="text-xs opacity-50 whitespace-nowrap italic hidden sm:inline mr-1">
+                    <span className="text-xs opacity-50 whitespace-nowrap italic mr-1">
                       {formatDate(g.created_at)}
                     </span>
                     {editControl}
@@ -280,6 +284,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
                 )}
                 {deleteControl}
               </div>
+              <GameComments gameId={g.id} />
             </li>
           );
         })}
@@ -311,7 +316,7 @@ export default function RecentGames({ refreshKey }: { refreshKey?: number }) {
         game="catan"
         gameId={viewingGame?.id ?? ""}
         createdAt={viewingGame?.created_at ?? ""}
-        alt={viewingGame ? `Partida ganada por ${viewingGame.winner_name}` : "Foto de la partida"}
+        alt={viewingGame ? `Partida ganada por ${viewingGame.winners.map((p) => p.name).join(" y ")}` : "Foto de la partida"}
         onClose={() => setViewingId(null)}
       />
     </div>
