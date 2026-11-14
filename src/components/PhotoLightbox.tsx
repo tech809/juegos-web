@@ -11,10 +11,11 @@ type PhotoLightboxProps = {
   gameId: string;
   createdAt: string;
   alt: string;
+  hasVideo?: boolean;
   onClose: () => void;
 };
 
-export default function PhotoLightbox({ image, game, gameId, createdAt, alt, onClose }: PhotoLightboxProps) {
+export default function PhotoLightbox({ image, game, gameId, createdAt, alt, hasVideo, onClose }: PhotoLightboxProps) {
   useEffect(() => {
     if (!image) return;
 
@@ -54,8 +55,19 @@ export default function PhotoLightbox({ image, game, gameId, createdAt, alt, onC
             className="relative flex-1 min-h-0 flex items-center justify-center"
             onClick={(event) => event.stopPropagation()}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image} alt={alt} className="h-full w-full object-contain" />
+            {hasVideo ? (
+              <video
+                src={`/api/games/${gameId}/video`}
+                poster={image}
+                controls
+                autoPlay
+                playsInline
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={image} alt={alt} className="h-full w-full object-contain" />
+            )}
             <button
               type="button"
               onClick={onClose}
@@ -68,12 +80,12 @@ export default function PhotoLightbox({ image, game, gameId, createdAt, alt, onC
 
           <div className="flex shrink-0 justify-center bg-card p-3 sm:p-4" onClick={(event) => event.stopPropagation()}>
             <a
-              href={image}
-              download={filename}
+              href={hasVideo ? `/api/games/${gameId}/video` : image}
+              download={hasVideo ? filename.replace(/\.jpg$/, "") : filename}
               className="inline-flex items-center gap-2 rounded border border-gold/50 px-4 py-2 text-xs font-display font-semibold uppercase tracking-wide text-gold transition-colors hover:bg-gold/10"
             >
               <DownloadIcon className="h-4 w-4" />
-              Descargar foto
+              {hasVideo ? "Descargar vídeo" : "Descargar foto"}
             </a>
           </div>
         </motion.div>

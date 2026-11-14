@@ -12,7 +12,8 @@ export async function GET(request: Request) {
   const limit = Number.isInteger(requestedLimit) && requestedLimit > 0 ? Math.min(50, requestedLimit) : 50;
   const offset = Number.isInteger(requestedOffset) && requestedOffset > 0 ? requestedOffset : 0;
   const games = await db.execute({ sql: `
-    SELECT g.id, g.game, g.winner_id, g.image, g.counts_for_stats, g.created_at, p.name as winner_name, p.color as winner_color
+    SELECT g.id, g.game, g.winner_id, g.image, g.counts_for_stats, g.created_at, p.name as winner_name, p.color as winner_color,
+           EXISTS(SELECT 1 FROM game_videos v WHERE v.game_id = g.id) AS has_video
     FROM games g
     JOIN players p ON p.id = g.winner_id
     WHERE g.game = 'catan'
@@ -39,6 +40,7 @@ export async function GET(request: Request) {
   const enriched = games.rows.map((g) => ({
     ...g,
     counts_for_stats: Number(g.counts_for_stats) === 1,
+    has_video: Number(g.has_video) === 1,
     players: grouped.get(g.id) ?? [],
     winners: (grouped.get(g.id) ?? []).filter((p: { is_winner: boolean }) => p.is_winner),
   }));

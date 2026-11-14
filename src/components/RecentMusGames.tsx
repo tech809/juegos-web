@@ -6,6 +6,7 @@ import { CrownIcon, PencilIcon, ScrollIcon, UndoIcon } from "./icons";
 import Skeleton from "./Skeleton";
 import EditMusGameModal from "./EditMusGameModal";
 import PhotoLightbox from "./PhotoLightbox";
+import PlayBadge from "./PlayBadge";
 import ShareGameButton from "./ShareGameButton";
 import GameComments from "./GameComments";
 
@@ -183,6 +184,7 @@ export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) 
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={g.image} alt="Foto de la partida" className="w-full h-56 sm:h-72 object-cover" />
                 </button>
+                {g.has_video && <PlayBadge />}
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
                 {!g.counts_for_stats && (
                   <span className="absolute top-2 left-2 text-[10px] font-display font-semibold uppercase tracking-wide px-2 py-0.5 rounded bg-black/60 text-gold-bright border border-gold-bright/40">
@@ -344,6 +346,7 @@ export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) 
 
       <PhotoLightbox
         image={viewingGame?.image ?? null}
+        hasVideo={viewingGame?.has_video}
         game="mus"
         gameId={viewingGame?.id ?? ""}
         createdAt={viewingGame?.created_at ?? ""}

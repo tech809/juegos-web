@@ -7,6 +7,7 @@ import type { GamePhoto, PhotosResponse } from "@/lib/types";
 import { CameraIcon, ChevronDownIcon, CrownIcon, DownloadIcon, GalleryIcon, XIcon } from "./icons";
 import Skeleton from "./Skeleton";
 import ShareGameButton from "./ShareGameButton";
+import PlayBadge from "./PlayBadge";
 
 const PAGE_SIZE = 12;
 
@@ -176,6 +177,7 @@ export default function GalleryView({ game }: { game: GameId }) {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+                {photo.has_video && <PlayBadge small />}
                 {!photo.counts_for_stats && (
                   <span className="absolute top-1.5 left-1.5 text-[9px] font-display font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-black/60 text-gold-bright border border-gold-bright/40">
                     No cuenta
@@ -226,12 +228,24 @@ export default function GalleryView({ game }: { game: GameId }) {
               className="bg-card w-full h-full sm:w-[calc(100%-3rem)] sm:h-[calc(100%-3rem)] sm:max-w-7xl sm:rounded-sm overflow-hidden flex flex-col"
             >
               <div className="relative flex-1 min-h-0 bg-black flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={open.image}
-                  alt={`Partida ganada por ${joinNames(open.winners, game)}`}
-                  className="w-full h-full object-contain"
-                />
+                {open.has_video ? (
+                  <video
+                    key={open.id}
+                    src={`/api/games/${open.id}/video`}
+                    poster={open.image}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={open.image}
+                    alt={`Partida ganada por ${joinNames(open.winners, game)}`}
+                    className="w-full h-full object-contain"
+                  />
+                )}
                 <button
                   type="button"
                   onClick={() => setOpenIndex(null)}
@@ -298,8 +312,8 @@ export default function GalleryView({ game }: { game: GameId }) {
 
                 <div className="flex items-center justify-center gap-2 shrink-0">
                   <a
-                    href={open.image}
-                    download={downloadName(open)}
+                    href={open.has_video ? `/api/games/${open.id}/video` : open.image}
+                    download={open.has_video ? downloadName(open).replace(/\.jpg$/, "") : downloadName(open)}
                     className="inline-flex items-center gap-2 rounded border border-gold/50 px-3 py-2 text-xs font-display font-semibold uppercase tracking-wide text-gold hover:bg-gold/10 transition-colors"
                   >
                     <DownloadIcon className="w-4 h-4" />

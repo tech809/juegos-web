@@ -13,7 +13,8 @@ export async function GET(request: Request) {
   const limit = Number.isInteger(requestedLimit) && requestedLimit > 0 ? Math.min(50, requestedLimit) : 50;
   const offset = Number.isInteger(requestedOffset) && requestedOffset > 0 ? requestedOffset : 0;
   const games = await db.execute({ sql: `
-    SELECT id, winner_team, image, counts_for_stats, created_at
+    SELECT id, winner_team, image, counts_for_stats, created_at,
+           EXISTS(SELECT 1 FROM game_videos v WHERE v.game_id = games.id) AS has_video
     FROM games
     WHERE game = 'mus'
     ORDER BY created_at DESC, rowid DESC
@@ -54,6 +55,7 @@ export async function GET(request: Request) {
       winner_team: Number(g.winner_team) === 1 ? 1 : 0,
       image: g.image ? String(g.image) : null,
       counts_for_stats: Number(g.counts_for_stats) === 1,
+      has_video: Number(g.has_video) === 1,
       created_at: String(g.created_at),
       teams: [{ players: teams[0] }, { players: teams[1] }],
     };

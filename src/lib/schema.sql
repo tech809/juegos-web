@@ -63,3 +63,13 @@ CREATE TABLE IF NOT EXISTS legacy_stats (
   wins INTEGER NOT NULL,
   UNIQUE (game, year, player_id)
 );
+
+-- Vídeo opcional de una partida (máx. 20 s, recomprimido en el navegador).
+-- La miniatura va en games.image y aquí solo el binario, que NO se incluye
+-- en las listas, sino que se sirve aparte por /api/games/[id]/video.
+CREATE TABLE IF NOT EXISTS game_videos (
+  game_id TEXT PRIMARY KEY,
+  mime TEXT NOT NULL,
+  data BLOB NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

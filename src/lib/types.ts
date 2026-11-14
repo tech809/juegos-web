@@ -13,6 +13,7 @@ export type GameRecord = {
   winner_name: string;
   winner_color: string;
   image?: string | null;
+  has_video?: boolean;
   counts_for_stats: boolean;
   created_at: string;
   players: { id: string; name: string; color: string; is_winner: boolean }[];
@@ -42,6 +43,7 @@ export type MusGameRecord = {
   id: string;
   winner_team: 0 | 1;
   image?: string | null;
+  has_video?: boolean;
   counts_for_stats: boolean;
   created_at: string;
   teams: [MusTeam, MusTeam];
@@ -63,6 +65,7 @@ export type GamePhoto = {
   id: string;
   game: "catan" | "mus";
   image: string;
+  has_video?: boolean;
   created_at: string;
   counts_for_stats: boolean;
   /** En catán, 1 jugador; en mus, los 2 de la pareja ganadora. */

@@ -14,6 +14,7 @@ export async function DELETE(
     [
       { sql: "DELETE FROM game_players WHERE game_id = ?", args: [id] },
       { sql: "DELETE FROM games WHERE id = ?", args: [id] },
+      { sql: "DELETE FROM game_videos WHERE game_id = ?", args: [id] },
     ],
     "write"
   );

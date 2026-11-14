@@ -39,6 +39,7 @@ export async function GET(request: Request) {
   const gamesRes = await db.execute({
     sql: `
       SELECT g.id, g.winner_id, g.winner_team, g.image, g.counts_for_stats, g.created_at,
+             EXISTS(SELECT 1 FROM game_videos v WHERE v.game_id = g.id) AS has_video,
              p.name AS winner_name, p.color AS winner_color
       FROM games g
       JOIN players p ON p.id = g.winner_id
@@ -96,6 +97,7 @@ export async function GET(request: Request) {
       image: String(g.image),
       created_at: String(g.created_at),
       counts_for_stats: Number(g.counts_for_stats) === 1,
+      has_video: Number(g.has_video) === 1,
       winners,
       rivals,
     };

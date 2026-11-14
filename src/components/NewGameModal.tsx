@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Player } from "@/lib/types";
-import { CameraIcon, CheckIcon, ChevronDownIcon, CrownIcon, PencilIcon, SearchIcon, ShieldIcon, SwordsIcon, XIcon } from "./icons";
+import { CheckIcon, ChevronDownIcon, CrownIcon, SearchIcon, ShieldIcon, SwordsIcon, XIcon } from "./icons";
 import Skeleton from "./Skeleton";
-import ImageEditModal from "./ImageEditModal";
+import GameMediaField from "./GameMediaField";
+import { EMPTY_MEDIA, uploadVideo, type MediaValue } from "@/lib/media";
 import PlayerAvatar from "./PlayerAvatar";
 
 const MAX_PLAYERS = 20;
@@ -23,13 +24,11 @@ export default function NewGameModal({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [winnerIds, setWinnerIds] = useState<string[]>([]);
   const [date, setDate] = useState(() => new Date().toLocaleDateString("sv-SE"));
-  const [image, setImage] = useState<string | null>(null);
-  const [editingSource, setEditingSource] = useState<File | string | null>(null);
+  const [media, setMedia] = useState<MediaValue>(EMPTY_MEDIA);
   const [countsForStats, setCountsForStats] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [playersOpen, setPlayersOpen] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
   const playersRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -107,11 +106,6 @@ export default function NewGameModal({
     }
   }
 
-  function handleFile(file: File | undefined) {
-    if (!file) return;
-    setEditingSource(file);
-  }
-
   async function confirm() {
     if (selectedIds.length < 2) {
       setError("Selecciona al menos 2 jugadores");
@@ -131,12 +125,22 @@ export default function NewGameModal({
       const res = await fetch("/api/games", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerIds: selectedIds, winnerIds, date, image, countsForStats }),
+        body: JSON.stringify({ playerIds: selectedIds, winnerIds, date, image: media.image, countsForStats }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setError(data.error ?? "No se pudo guardar la partida");
         return;
+      }
+      const created = await res.json().catch(() => null);
+      if (media.video && created?.id) {
+        try {
+          await uploadVideo(created.id, media.video);
+        } catch (e) {
+          await fetch(`/api/games/${created.id}`, { method: "DELETE" }).catch(() => {});
+          setError(e instanceof Error ? e.message : "No se pudo subir el vídeo");
+          return;
+        }
       }
       onSaved(winnerIds.map((id) => allPlayers.find((p) => p.id === id)?.name).filter(Boolean).join(" y ") || "¡Victoria!");
     } catch {
@@ -330,46 +334,7 @@ export default function NewGameModal({
 
           {/* Foto */}
           <section className="mb-5">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFile(e.target.files?.[0])}
-            />
-            {image ? (
-              <div className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={image} alt="Foto de la partida" className="w-full h-36 object-cover rounded border-2 border-border" />
-                <div className="absolute top-1.5 right-1.5 flex gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setEditingSource(image)}
-                    className="bg-black/60 text-white rounded-full p-1"
-                    aria-label="Editar imagen"
-                  >
-                    <PencilIcon className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImage(null)}
-                    className="bg-black/60 text-white rounded-full p-1"
-                    aria-label="Quitar imagen"
-                  >
-                    <XIcon className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="w-full py-3 rounded border-2 border-dashed border-border text-sm font-display flex items-center justify-center gap-2 opacity-70 hover:opacity-100 hover:border-gold transition-colors"
-              >
-                <CameraIcon className="w-4 h-4" />
-                Añadir foto (opcional)
-              </button>
-            )}
+            <GameMediaField value={media} onChange={setMedia} />
           </section>
 
           {/* Cuenta para estadísticas */}
@@ -408,18 +373,6 @@ export default function NewGameModal({
           </button>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
-    <AnimatePresence>
-      {editingSource && (
-        <ImageEditModal
-          source={editingSource}
-          onCancel={() => setEditingSource(null)}
-          onConfirm={(dataUrl) => {
-            setImage(dataUrl);
-            setEditingSource(null);
-          }}
-        />
-      )}
     </AnimatePresence>
     </>
   );
