@@ -241,14 +241,13 @@ export function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
-export function PawIcon({ className }: { className?: string }) {
+export function HoundIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 12.5c-2.6 0-5 2.7-5 5 0 1.7 1.3 2.5 2.7 2.5 1 0 1.5-.5 2.3-.5s1.3.5 2.3.5c1.4 0 2.7-.8 2.7-2.5 0-2.3-2.4-5-5-5z" fill="currentColor" fillOpacity="0.2" />
-      <ellipse cx="5.2" cy="11" rx="1.7" ry="2.2" />
-      <ellipse cx="9" cy="6.8" rx="1.7" ry="2.3" />
-      <ellipse cx="15" cy="6.8" rx="1.7" ry="2.3" />
-      <ellipse cx="18.8" cy="11" rx="1.7" ry="2.2" />
+      <path d="M3.2 11.2C3.2 10.4 3.8 10 4.6 10H8C8.4 7.4 10.4 5.2 13.2 5.2C16.4 5.2 18.8 7.6 18.8 11V20H10.6V16.2C9.2 16 8 15.4 7 14.4H4.6C3.8 14.4 3.2 13.8 3.2 13Z" fill="currentColor" fillOpacity="0.15" />
+      <path d="M12.6 7C10.6 8.4 10.2 12.6 11.6 16.2C13.4 16.8 15.8 14.8 16.6 11.4C17 8.8 15 6.6 12.6 7Z" />
+      <circle cx="7.4" cy="12" r="0.8" fill="currentColor" stroke="none" />
+      <circle cx="3.9" cy="11.4" r="1" fill="currentColor" stroke="none" />
     </svg>
   );
 }

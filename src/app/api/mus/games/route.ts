@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db, ensureSchema } from "@/lib/db";
 import { gameDateToTimestamp } from "@/lib/game-date";
+import { parseNotes } from "@/lib/notes";
 import type { MusGameRecord, MusTeam } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ export async function GET(request: Request) {
   const limit = Number.isInteger(requestedLimit) && requestedLimit > 0 ? Math.min(50, requestedLimit) : 50;
   const offset = Number.isInteger(requestedOffset) && requestedOffset > 0 ? requestedOffset : 0;
   const games = await db.execute({ sql: `
-    SELECT id, winner_team, image, counts_for_stats, created_at,
+    SELECT id, winner_team, image, notes, counts_for_stats, created_at,
            EXISTS(SELECT 1 FROM game_videos v WHERE v.game_id = games.id) AS has_video
     FROM games
     WHERE game = 'mus'
@@ -56,6 +57,7 @@ export async function GET(request: Request) {
       image: g.image ? String(g.image) : null,
       counts_for_stats: Number(g.counts_for_stats) === 1,
       has_video: Number(g.has_video) === 1,
+      notes: g.notes ? String(g.notes) : null,
       created_at: String(g.created_at),
       teams: [{ players: teams[0] }, { players: teams[1] }],
     };
@@ -66,7 +68,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   await ensureSchema();
-  const { teamA, teamB, winnerTeam, date, image, countsForStats } = await request.json();
+  const { teamA, teamB, winnerTeam, date, image, notes: rawNotes, countsForStats } = await request.json();
   const createdAt = gameDateToTimestamp(date);
   if (!createdAt) return NextResponse.json({ error: "Fecha inválida o futura" }, { status: 400 });
 
@@ -98,6 +100,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "La imagen es demasiado grande" }, { status: 400 });
   }
 
+  const parsedNotes = parseNotes(rawNotes);
+  if (!parsedNotes.ok) return NextResponse.json({ error: parsedNotes.error }, { status: 400 });
+
   const id = crypto.randomUUID();
   const winnerId = winnerTeam === 0 ? teamA[0] : teamB[0];
   const counts = countsForStats === false ? 0 : 1;
@@ -106,8 +111,8 @@ export async function POST(request: Request) {
     await db.batch(
       [
         {
-          sql: "INSERT INTO games (id, game, winner_id, winner_team, image, counts_for_stats, created_at) VALUES (?, 'mus', ?, ?, ?, ?, ?)",
-          args: [id, winnerId, winnerTeam, typeof image === "string" ? image : null, counts, createdAt],
+          sql: "INSERT INTO games (id, game, winner_id, winner_team, image, notes, counts_for_stats, created_at) VALUES (?, 'mus', ?, ?, ?, ?, ?, ?)",
+          args: [id, winnerId, winnerTeam, typeof image === "string" ? image : null, parsedNotes.notes, counts, createdAt],
         },
         ...teamA.map((playerId: string) => ({
           sql: "INSERT INTO game_players (game_id, player_id, team) VALUES (?, ?, 0)",

@@ -6,6 +6,7 @@ import type { Player } from "@/lib/types";
 import { CheckIcon, ChevronDownIcon, CrownIcon, SearchIcon, ShieldIcon, SwordsIcon, XIcon } from "./icons";
 import Skeleton from "./Skeleton";
 import GameMediaField from "./GameMediaField";
+import GameNotesField from "./GameNotesField";
 import { EMPTY_MEDIA, uploadVideo, type MediaValue } from "@/lib/media";
 import PlayerAvatar from "./PlayerAvatar";
 
@@ -24,6 +25,7 @@ export default function NewGameModal({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [winnerIds, setWinnerIds] = useState<string[]>([]);
   const [date, setDate] = useState(() => new Date().toLocaleDateString("sv-SE"));
+  const [notes, setNotes] = useState("");
   const [media, setMedia] = useState<MediaValue>(EMPTY_MEDIA);
   const [countsForStats, setCountsForStats] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -125,7 +127,7 @@ export default function NewGameModal({
       const res = await fetch("/api/games", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerIds: selectedIds, winnerIds, date, image: media.image, countsForStats }),
+        body: JSON.stringify({ playerIds: selectedIds, winnerIds, date, image: media.image, notes, countsForStats }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -336,6 +338,8 @@ export default function NewGameModal({
           <section className="mb-5">
             <GameMediaField value={media} onChange={setMedia} />
           </section>
+
+          <GameNotesField value={notes} onChange={setNotes} />
 
           {/* Cuenta para estadísticas */}
           <section className="mb-5">

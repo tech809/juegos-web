@@ -6,6 +6,7 @@ import type { MusGameRecord, Player } from "@/lib/types";
 import { CrownIcon, PencilIcon, SearchIcon, SwordsIcon, XIcon } from "./icons";
 import Skeleton from "./Skeleton";
 import GameMediaField from "./GameMediaField";
+import GameNotesField from "./GameNotesField";
 import { removeVideo, uploadVideo, type MediaValue } from "@/lib/media";
 
 /**
@@ -32,6 +33,7 @@ export default function EditMusGameModal({
   const [selectedIds, setSelectedIds] = useState<string[]>(() => initialPlayers.map((p) => p.id));
   const [winnerTeam, setWinnerTeam] = useState<0 | 1 | null>(game.winner_team);
   const [date, setDate] = useState(game.created_at.slice(0, 10));
+  const [notes, setNotes] = useState(game.notes ?? "");
   const [media, setMedia] = useState<MediaValue>(() => ({
     image: game.image ?? null,
     video: null,
@@ -105,6 +107,7 @@ export default function EditMusGameModal({
           winnerTeam,
           date,
           image: media.image,
+          notes,
           countsForStats,
         }),
       });
@@ -275,6 +278,8 @@ export default function EditMusGameModal({
           <section className="mb-5">
             <GameMediaField value={media} onChange={setMedia} gameId={game.id} />
           </section>
+
+          <GameNotesField value={notes} onChange={setNotes} />
 
           {/* Cuenta para estadísticas */}
           <section className="mb-5">

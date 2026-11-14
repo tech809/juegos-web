@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseNotes } from "@/lib/notes";
 import { db, ensureSchema } from "@/lib/db";
 import { gameDateToTimestamp } from "@/lib/game-date";
 
@@ -44,6 +45,7 @@ export async function PATCH(
     winnerIds?: unknown;
     date?: unknown;
     image?: unknown;
+    notes?: unknown;
     countsForStats?: unknown;
   };
   try {
@@ -53,7 +55,7 @@ export async function PATCH(
   }
 
   const existing = await db.execute({
-    sql: "SELECT id, game, winner_id, image, counts_for_stats, created_at FROM games WHERE id = ?",
+    sql: "SELECT id, game, winner_id, image, notes, counts_for_stats, created_at FROM games WHERE id = ?",
     args: [id],
   });
   if (existing.rows.length === 0) {
@@ -127,6 +129,15 @@ export async function PATCH(
   const createdAt = body.date === undefined ? String(current.created_at) : gameDateToTimestamp(body.date);
   if (!createdAt) return NextResponse.json({ error: "Fecha inválida o futura" }, { status: 400 });
 
+  let notes: string | null;
+  if (body.notes === undefined) {
+    notes = current.notes ? String(current.notes) : null;
+  } else {
+    const parsed = parseNotes(body.notes);
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    notes = parsed.notes;
+  }
+
   let image: string | null;
   if (body.image === undefined) {
     image = current.image ? String(current.image) : null;
@@ -152,8 +163,8 @@ export async function PATCH(
     await db.batch(
       [
         {
-          sql: "UPDATE games SET winner_id = ?, image = ?, counts_for_stats = ?, created_at = ? WHERE id = ?",
-          args: [winnerIds[0], image, counts, createdAt, id],
+          sql: "UPDATE games SET winner_id = ?, image = ?, notes = ?, counts_for_stats = ?, created_at = ? WHERE id = ?",
+          args: [winnerIds[0], image, notes, counts, createdAt, id],
         },
         ...(playerIds
           ? [

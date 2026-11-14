@@ -14,6 +14,7 @@ export type GameRecord = {
   winner_color: string;
   image?: string | null;
   has_video?: boolean;
+  notes?: string | null;
   counts_for_stats: boolean;
   created_at: string;
   players: { id: string; name: string; color: string; is_winner: boolean }[];
@@ -44,6 +45,7 @@ export type MusGameRecord = {
   winner_team: 0 | 1;
   image?: string | null;
   has_video?: boolean;
+  notes?: string | null;
   counts_for_stats: boolean;
   created_at: string;
   teams: [MusTeam, MusTeam];

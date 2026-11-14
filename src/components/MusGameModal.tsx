@@ -6,6 +6,7 @@ import type { Player } from "@/lib/types";
 import { CardsIcon, CheckIcon, ChevronDownIcon, CrownIcon, SearchIcon, SwordsIcon, XIcon } from "./icons";
 import Skeleton from "./Skeleton";
 import GameMediaField from "./GameMediaField";
+import GameNotesField from "./GameNotesField";
 import { EMPTY_MEDIA, uploadVideo, type MediaValue } from "@/lib/media";
 import PlayerAvatar from "./PlayerAvatar";
 
@@ -22,6 +23,7 @@ export default function MusGameModal({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [winnerTeam, setWinnerTeam] = useState<0 | 1 | null>(null);
   const [date, setDate] = useState(() => new Date().toLocaleDateString("sv-SE"));
+  const [notes, setNotes] = useState("");
   const [media, setMedia] = useState<MediaValue>(EMPTY_MEDIA);
   const [countsForStats, setCountsForStats] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -128,6 +130,7 @@ export default function MusGameModal({
           winnerTeam,
           date,
           image: media.image,
+          notes,
           countsForStats,
         }),
       });
@@ -363,6 +366,8 @@ export default function MusGameModal({
           <section className="mb-5">
             <GameMediaField value={media} onChange={setMedia} />
           </section>
+
+          <GameNotesField value={notes} onChange={setNotes} />
 
           {/* Cuenta para estadísticas */}
           <section className="mb-5">

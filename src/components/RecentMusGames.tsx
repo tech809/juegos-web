@@ -9,6 +9,7 @@ import PhotoLightbox from "./PhotoLightbox";
 import PlayBadge from "./PlayBadge";
 import ShareGameButton from "./ShareGameButton";
 import GameComments from "./GameComments";
+import { GameNotesText } from "./GameNotesField";
 
 const PAGE_SIZE = 6;
 
@@ -256,6 +257,7 @@ export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) 
                   <p className="text-[11px] text-[#f2e4bd]/60 italic mt-1">{formatDate(g.created_at)}</p>
                 </div>
                 </div>
+                <GameNotesText notes={g.notes} />
                 <GameComments gameId={g.id} />
               </li>
             );
@@ -316,7 +318,8 @@ export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) 
                 )}
                 {deleteControl}
               </div>
-              <GameComments gameId={g.id} />
+              <GameNotesText notes={g.notes} />
+                <GameComments gameId={g.id} />
             </li>
           );
         })}

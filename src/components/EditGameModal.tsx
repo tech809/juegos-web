@@ -6,6 +6,7 @@ import type { GameRecord, Player } from "@/lib/types";
 import { CrownIcon, PencilIcon, SearchIcon, ShieldIcon, SwordsIcon, XIcon } from "./icons";
 import Skeleton from "./Skeleton";
 import GameMediaField from "./GameMediaField";
+import GameNotesField from "./GameNotesField";
 import { removeVideo, uploadVideo, type MediaValue } from "@/lib/media";
 
 /**
@@ -27,6 +28,7 @@ export default function EditGameModal({
   const [selectedIds, setSelectedIds] = useState<string[]>(() => game.players.map((p) => p.id));
   const [winnerIds, setWinnerIds] = useState<string[]>(() => game.winners.map((p) => p.id));
   const [date, setDate] = useState(game.created_at.slice(0, 10));
+  const [notes, setNotes] = useState(game.notes ?? "");
   const [media, setMedia] = useState<MediaValue>(() => ({
     image: game.image ?? null,
     video: null,
@@ -87,7 +89,7 @@ export default function EditGameModal({
       const res = await fetch(`/api/games/${game.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerIds: selectedIds, winnerIds, date, image: media.image, countsForStats }),
+        body: JSON.stringify({ playerIds: selectedIds, winnerIds, date, image: media.image, notes, countsForStats }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -236,6 +238,8 @@ export default function EditGameModal({
           <section className="mb-5">
             <GameMediaField value={media} onChange={setMedia} gameId={game.id} />
           </section>
+
+          <GameNotesField value={notes} onChange={setNotes} />
 
           {/* Cuenta para estadísticas */}
           <section className="mb-5">

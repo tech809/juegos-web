@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db, ensureSchema } from "@/lib/db";
 import { gameDateToTimestamp } from "@/lib/game-date";
+import { parseNotes } from "@/lib/notes";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
   const limit = Number.isInteger(requestedLimit) && requestedLimit > 0 ? Math.min(50, requestedLimit) : 50;
   const offset = Number.isInteger(requestedOffset) && requestedOffset > 0 ? requestedOffset : 0;
   const games = await db.execute({ sql: `
-    SELECT g.id, g.game, g.winner_id, g.image, g.counts_for_stats, g.created_at, p.name as winner_name, p.color as winner_color,
+    SELECT g.id, g.game, g.winner_id, g.image, g.notes, g.counts_for_stats, g.created_at, p.name as winner_name, p.color as winner_color,
            EXISTS(SELECT 1 FROM game_videos v WHERE v.game_id = g.id) AS has_video
     FROM games g
     JOIN players p ON p.id = g.winner_id
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
     ...g,
     counts_for_stats: Number(g.counts_for_stats) === 1,
     has_video: Number(g.has_video) === 1,
+    notes: g.notes ? String(g.notes) : null,
     players: grouped.get(g.id) ?? [],
     winners: (grouped.get(g.id) ?? []).filter((p: { is_winner: boolean }) => p.is_winner),
   }));
@@ -50,7 +52,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   await ensureSchema();
-  const { playerIds: rawPlayerIds, winnerIds: rawWinnerIds, winnerId, date, image, countsForStats } = await request.json();
+  const { playerIds: rawPlayerIds, winnerIds: rawWinnerIds, winnerId, date, image, notes: rawNotes, countsForStats } = await request.json();
 
   if (!Array.isArray(rawPlayerIds) || rawPlayerIds.length < 2 || rawPlayerIds.some((id) => typeof id !== "string" || !id)) {
     return NextResponse.json({ error: "Se necesitan al menos 2 jugadores" }, { status: 400 });
@@ -78,14 +80,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "La imagen es demasiado grande" }, { status: 400 });
   }
 
+  const parsedNotes = parseNotes(rawNotes);
+  if (!parsedNotes.ok) return NextResponse.json({ error: parsedNotes.error }, { status: 400 });
+
   const id = crypto.randomUUID();
   const counts = countsForStats === false ? 0 : 1;
   try {
     await db.batch(
       [
         {
-          sql: "INSERT INTO games (id, game, winner_id, image, counts_for_stats, created_at) VALUES (?, 'catan', ?, ?, ?, ?)",
-          args: [id, winnerIds[0], typeof image === "string" ? image : null, counts, createdAt],
+          sql: "INSERT INTO games (id, game, winner_id, image, notes, counts_for_stats, created_at) VALUES (?, 'catan', ?, ?, ?, ?, ?)",
+          args: [id, winnerIds[0], typeof image === "string" ? image : null, parsedNotes.notes, counts, createdAt],
         },
         ...playerIds.map((playerId) => ({
           sql: "INSERT INTO game_players (game_id, player_id, is_winner) VALUES (?, ?, ?)",

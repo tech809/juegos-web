@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import styles from "./DogBarkButton.module.css";
-import { PawIcon } from "./icons";
+import { HoundIcon } from "./icons";
 
 export default function DogBarkButton() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -42,7 +42,7 @@ export default function DogBarkButton() {
         playing ? `${styles.playing} bg-gold-bright/15 border-gold-bright/60 text-gold-bright` : ""
       }`}
     >
-      <PawIcon className={`${styles.paw} h-4 w-4 sm:h-5 sm:w-5`} />
+      <HoundIcon className={`${styles.paw} h-4 w-4 sm:h-5 sm:w-5`} />
       <span className={styles.sound} aria-hidden="true">♫</span>
     </button>
   );
