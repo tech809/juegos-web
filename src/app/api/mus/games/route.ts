@@ -5,16 +5,20 @@ import type { MusGameRecord, MusTeam } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   await ensureSchema();
-
-  const games = await db.execute(`
+  const params = new URL(request.url).searchParams;
+  const requestedLimit = Number(params.get("limit"));
+  const requestedOffset = Number(params.get("offset"));
+  const limit = Number.isInteger(requestedLimit) && requestedLimit > 0 ? Math.min(50, requestedLimit) : 50;
+  const offset = Number.isInteger(requestedOffset) && requestedOffset > 0 ? requestedOffset : 0;
+  const games = await db.execute({ sql: `
     SELECT id, winner_team, image, counts_for_stats, created_at
     FROM games
     WHERE game = 'mus'
     ORDER BY created_at DESC, rowid DESC
-    LIMIT 50
-  `);
+    LIMIT ? OFFSET ?
+  `, args: [limit, offset] });
 
   const gameIds = games.rows.map((g) => String(g.id));
   const grouped = new Map<string, { 0: MusTeam["players"]; 1: MusTeam["players"] }>();

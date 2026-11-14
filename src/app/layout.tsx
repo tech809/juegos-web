@@ -17,9 +17,20 @@ const cinzel = Cinzel({
 });
 
 export const metadata: Metadata = {
-  title: "Crónicas de la Mesa",
-  description: "Registra tus partidas de Catán y Mus, y reina en el salón de la fama",
+  metadataBase: new URL("https://juegos.proactivefuture.eu"),
+  title: { default: "Crónicas de la Mesa | Partidas de Catán y Mus", template: "%s | Crónicas de la Mesa" },
+  description: "Registra partidas de Catán y Mus, consulta estadísticas, descubre rivalidades y revive los mejores momentos de tu mesa.",
   applicationName: "Crónicas de la Mesa",
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    siteName: "Crónicas de la Mesa",
+    title: "Crónicas de la Mesa | Partidas de Catán y Mus",
+    description: "Partidas, estadísticas, jugadores y momentos memorables de Catán y Mus.",
+    url: "/",
+    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "Escudo de Crónicas de la Mesa" }],
+  },
+  twitter: { card: "summary", title: "Crónicas de la Mesa", description: "Partidas y estadísticas de Catán y Mus.", images: ["/icon-512.png"] },
   appleWebApp: {
     capable: true,
     title: "Crónicas",

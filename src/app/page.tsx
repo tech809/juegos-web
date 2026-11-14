@@ -28,9 +28,9 @@ export default function Home() {
       <div className="text-center mb-6">
         <div className="flex items-center justify-center gap-3 text-gold mb-3">
           <SwordsIcon className="w-6 h-6 opacity-70" />
-          <span className="font-display text-xs sm:text-sm tracking-[0.25em] uppercase opacity-80">
+          <h1 className="font-display text-xs sm:text-sm tracking-[0.25em] uppercase opacity-80">
             Registra tu conquista
-          </span>
+          </h1>
           <SwordsIcon className="w-6 h-6 opacity-70 scale-x-[-1]" />
         </div>
         <button

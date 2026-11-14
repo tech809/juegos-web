@@ -45,7 +45,7 @@ export default function HallOfFame({
           <p className={styles.kicker}>Crónicas de {game === "mus" ? "la mesa de Mus" : "Catán"}</p>
           <div className={styles.title}>
             <span aria-hidden="true"><LaurelIcon className={styles.laurel} /></span>
-            <h2 id="hall-title" className="font-display">Sala de la Fama</h2>
+            <h1 id="hall-title" className="font-display">Sala de la Fama</h1>
             <span aria-hidden="true"><LaurelIcon className={styles.laurel} flip /></span>
           </div>
           <p className={styles.subtitle}>{subtitle}</p>
@@ -94,7 +94,7 @@ export default function HallOfFame({
       </section>
 
       {rest.length > 0 && (
-        <section className={styles.ranking} aria-labelledby="ranking-title">
+        <section className={`${styles.ranking} ${game === "mus" ? styles.rankingMus : ""}`} aria-labelledby="ranking-title">
           <div className={styles.rankingHeader}>
             <h3 id="ranking-title" className="font-display">{game === "mus" ? "El resto de la mesa" : "El resto de la corte"}</h3>
             <span>{players.length} aspirantes</span>

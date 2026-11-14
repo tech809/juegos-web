@@ -28,9 +28,9 @@ export default function MusPage() {
       <div className="text-center mb-6">
         <div className="flex items-center justify-center gap-3 text-gold mb-3">
           <CardsIcon className="w-6 h-6 opacity-70" />
-          <span className="font-display text-xs sm:text-sm tracking-[0.25em] uppercase opacity-80">
+          <h1 className="font-display text-xs sm:text-sm tracking-[0.25em] uppercase opacity-80">
             Registra el envite
-          </span>
+          </h1>
           <CardsIcon className="w-6 h-6 opacity-70 scale-x-[-1]" />
         </div>
         <button

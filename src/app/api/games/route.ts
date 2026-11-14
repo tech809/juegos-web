@@ -4,23 +4,30 @@ import { gameDateToTimestamp } from "@/lib/game-date";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   await ensureSchema();
-  const games = await db.execute(`
+  const params = new URL(request.url).searchParams;
+  const requestedLimit = Number(params.get("limit"));
+  const requestedOffset = Number(params.get("offset"));
+  const limit = Number.isInteger(requestedLimit) && requestedLimit > 0 ? Math.min(50, requestedLimit) : 50;
+  const offset = Number.isInteger(requestedOffset) && requestedOffset > 0 ? requestedOffset : 0;
+  const games = await db.execute({ sql: `
     SELECT g.id, g.game, g.winner_id, g.image, g.counts_for_stats, g.created_at, p.name as winner_name, p.color as winner_color
     FROM games g
     JOIN players p ON p.id = g.winner_id
     WHERE g.game = 'catan'
     ORDER BY g.created_at DESC, g.rowid DESC
-    LIMIT 50
-  `);
+    LIMIT ? OFFSET ?
+  `, args: [limit, offset] });
 
-  const playersByGame = await db.execute(`
+  const ids = games.rows.map((g) => String(g.id));
+  if (ids.length === 0) return NextResponse.json([]);
+  const playersByGame = await db.execute({ sql: `
     SELECT gp.game_id, gp.is_winner, pl.id, pl.name, pl.color
     FROM game_players gp
     JOIN players pl ON pl.id = gp.player_id
-    JOIN games g2 ON g2.id = gp.game_id AND g2.game = 'catan'
-  `);
+    WHERE gp.game_id IN (${ids.map(() => "?").join(",")})
+  `, args: ids });
 
   const grouped = new Map();
   for (const row of playersByGame.rows) {

@@ -26,27 +26,47 @@ export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) 
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
     setError(null);
-    fetch("/api/mus/games")
+    fetch(`/api/mus/games?limit=${PAGE_SIZE + 1}&offset=0`)
       .then((r) => {
         if (!r.ok) throw new Error();
         return r.json();
       })
-      .then(setGames)
+      .then((data: MusGameRecord[]) => {
+        setGames(data.slice(0, PAGE_SIZE));
+        setHasMore(data.length > PAGE_SIZE);
+      })
       .catch(() => setError("No se pudo cargar la crónica. Comprueba tu conexión."))
       .finally(() => setLoading(false));
   }
 
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
     load();
   }, [refreshKey]);
+
+  async function loadMore() {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/mus/games?limit=${PAGE_SIZE + 1}&offset=${games.length}`);
+      if (!res.ok) throw new Error();
+      const data: MusGameRecord[] = await res.json();
+      setGames((prev) => [...prev, ...data.slice(0, PAGE_SIZE)]);
+      setHasMore(data.length > PAGE_SIZE);
+    } catch {
+      setError("No se pudieron cargar más partidas.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   async function undoGame(id: string) {
     setConfirmingId(null);
@@ -85,7 +105,7 @@ export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) 
     );
   }
 
-  const visible = games.slice(0, visibleCount);
+  const visible = games;
   const editingGame = games.find((g) => g.id === editingId) ?? null;
   const viewingGame = games.find((g) => g.id === viewingId && g.image) ?? null;
 
@@ -300,13 +320,14 @@ export default function RecentMusGames({ refreshKey }: { refreshKey?: number }) 
         })}
       </ul>
 
-      {visibleCount < games.length && (
+      {hasMore && (
         <button
           type="button"
-          onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+          onClick={loadMore}
+          disabled={loadingMore}
           className="w-full mt-4 py-2.5 rounded border-2 border-dashed border-border text-sm font-display font-semibold uppercase tracking-wide opacity-70 hover:opacity-100 hover:border-gold transition-colors"
         >
-          Ver más
+          {loadingMore ? "Cargando…" : "Ver más"}
         </button>
       )}
 
