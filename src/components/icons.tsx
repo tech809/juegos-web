@@ -241,6 +241,18 @@ export function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
+export function PawIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 12.5c-2.6 0-5 2.7-5 5 0 1.7 1.3 2.5 2.7 2.5 1 0 1.5-.5 2.3-.5s1.3.5 2.3.5c1.4 0 2.7-.8 2.7-2.5 0-2.3-2.4-5-5-5z" fill="currentColor" fillOpacity="0.2" />
+      <ellipse cx="5.2" cy="11" rx="1.7" ry="2.2" />
+      <ellipse cx="9" cy="6.8" rx="1.7" ry="2.3" />
+      <ellipse cx="15" cy="6.8" rx="1.7" ry="2.3" />
+      <ellipse cx="18.8" cy="11" rx="1.7" ry="2.2" />
+    </svg>
+  );
+}
+
 export function FlipIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
